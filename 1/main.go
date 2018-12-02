@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"os"
 	"strconv"
@@ -19,14 +20,21 @@ func (f *freq) apply(input int) {
 func main() {
 	f := freq{0}
 	r := bufio.NewReader(os.Stdin)
-	for {
-		input, _ := r.ReadString('\n')
-		input = strings.TrimSpace(input)
-		if strings.TrimSpace(input) == "" {
-			fmt.Println(f.value)
-			os.Exit(0)
+
+	flag.Parse()
+	switch flag.Arg(0) {
+
+// this solves part 1
+	default:
+		for {
+			input, _ := r.ReadString('\n')
+			input = strings.TrimSpace(input)
+			if strings.TrimSpace(input) == "" {
+				fmt.Println(f.value)
+				os.Exit(0)
+			}
+			f.apply(nice(input))
 		}
-		f.apply(nice(input))
 	}
 }
 
