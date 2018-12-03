@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"io"
 	"os"
@@ -11,7 +12,10 @@ import (
 type device struct {
 	twos   int
 	threes int
+	boxes  []string
 }
+
+var isSearching = flag.Bool("f", false, "turn on fabric search mode")
 
 func (d *device) scan(input string) {
 	counts := make(map[rune]int)
@@ -47,9 +51,55 @@ func (d *device) checksum() int {
 	return d.twos * d.threes
 }
 
+// part 2 device functionality
+
+func (d *device) check(input string) (string, bool) {
+	for _, fabric := range d.boxes {
+		if matches(input, fabric) {
+			return fabric, true
+		}
+	}
+	d.boxes = append(d.boxes, input)
+	return "", false
+}
+
+func matches(i1 string, i2 string) bool {
+	diff := 0
+	for _, s := range i1 {
+		if !strings.ContainsRune(i2, s) {
+			diff = diff + 1
+		}
+		if diff > 1 {
+			return false
+		}
+	}
+	return true
+}
+
 func main() {
 	r := bufio.NewReader(os.Stdin)
 	d := &device{}
+
+	flag.Parse()
+	if *isSearching {
+		fmt.Println("searching mode is ON")
+		for {
+			input, err := r.ReadString('\n')
+			input = strings.TrimSpace(input)
+			if input == "" && err == io.EOF {
+				fmt.Println("GoodBye...")
+				os.Exit(0)
+			}
+			result, ok := d.check(input)
+			if ok {
+				fmt.Printf("Two Boxes are [%s] and [%s]\n", input, result)
+				os.Exit(0)
+			}
+		}
+	}
+
+	// default checksum mode (part 1)
+
 	for {
 		input, err := r.ReadString('\n')
 		input = strings.TrimSpace(input)
