@@ -64,16 +64,13 @@ func (d *device) check(input string) (string, bool) {
 }
 
 func matches(i1 string, i2 string) bool {
-	diff := 0
 	for _, s := range i1 {
-		if !strings.ContainsRune(i2, s) {
-			diff = diff + 1
-		}
-		if diff > 1 {
-			return false
-		}
+		i2 = strings.Replace(i2, string(s), "", 1)
 	}
-	return true
+	if len(i2) <= 1 {
+		return true
+	}
+	return false
 }
 
 func main() {
