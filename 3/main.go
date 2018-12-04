@@ -126,6 +126,7 @@ func main() {
 				if c1.id != c2.id {
 					if overlap(&c1, &c2) {
 						FAIL = true
+						break
 					}
 				}
 			}
