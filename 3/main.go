@@ -95,7 +95,6 @@ func overlapCells(c1 *claim, c2 *claim) []fabricCell {
 		for j := left; j < right; j++ {
 			cells = append(cells, fabricCell{i, j})
 		}
-
 	}
 	return cells
 }
@@ -110,7 +109,6 @@ func main() {
 		input, err := r.ReadString('\n')
 		input = strings.TrimSpace(input)
 		if input == "" && err == io.EOF {
-			//			fmt.Printf("checksum: [%d]\n", d.checksum())
 			break
 		}
 		claims = append(claims, NewClaim(input))
