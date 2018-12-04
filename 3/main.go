@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"io"
 	"os"
@@ -99,7 +100,10 @@ func overlapCells(c1 *claim, c2 *claim) []fabricCell {
 	return cells
 }
 
+var perfect = flag.Bool("f", false, "find that perfect little claim")
+
 func main() {
+	flag.Parse()
 	r := bufio.NewReader(os.Stdin)
 	claims := make([]claim, 0)
 	for {
@@ -113,7 +117,27 @@ func main() {
 	}
 
 	crosshatch := make(map[string]int)
-	// cross join
+	//cross join
+
+	if *perfect {
+		FAIL := false
+		for _, c1 := range claims {
+			for _, c2 := range claims {
+				if c1.id != c2.id {
+					if overlap(&c1, &c2) {
+						FAIL = true
+					}
+				}
+			}
+			if !FAIL {
+				fmt.Printf("Perfect Claim is .... [%s]\n", c1.id)
+			}
+			FAIL = false
+		}
+		os.Exit(0)
+	}
+
+	// default behaviour of finding wasted inches
 	for _, c1 := range claims {
 		for _, c2 := range claims {
 			if c1.id != c2.id {
@@ -134,7 +158,8 @@ func main() {
 			sum = sum + 1
 		}
 	}
-	fmt.Printf("wasted inches from claims: [%d]\n", sum)
+
+	fmt.Printf("wasted square inches from claims: [%d]\n", sum)
 }
 
 func w(c1 *claim, c2 *claim) int {
