@@ -77,7 +77,6 @@ func overlapSize(c1 *claim, c2 *claim) int {
 }
 
 func overlapCells(c1 *claim, c2 *claim) []fabricCell {
-
 	cells := make([]fabricCell, 0)
 	if c1.top < c2.top {
 		c1, c2 = c2, c1
@@ -115,8 +114,7 @@ func main() {
 	}
 
 	crosshatch := make(map[string]int)
-	//cross join
-
+	//cross join land of the friend of friends
 	if *perfect {
 		FAIL := false
 		for _, c1 := range claims {
@@ -135,7 +133,6 @@ func main() {
 		}
 		os.Exit(0)
 	}
-
 	// default behaviour of finding wasted inches
 	for _, c1 := range claims {
 		for _, c2 := range claims {
@@ -149,7 +146,6 @@ func main() {
 			}
 		}
 	}
-
 	// count those little inchy squares
 	sum := 0
 	for _, v := range crosshatch {
@@ -157,7 +153,6 @@ func main() {
 			sum = sum + 1
 		}
 	}
-
 	fmt.Printf("wasted square inches from claims: [%d]\n", sum)
 }
 
