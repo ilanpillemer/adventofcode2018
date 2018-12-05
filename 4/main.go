@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -95,13 +96,33 @@ func main() {
 					continue
 				}
 				g := guards[currentGuardId]
+				g.id = currentGuardId
 				g.update(scrawl)
 				guards[currentGuardId] = g
 			}
 
+			max := 0
+			var lazy guard
+
 			for k, v := range guards {
-				fmt.Printf("guard[%s], totalAsleep[%d]\n", k, v.totalMinutes)
+				if v.totalMinutes >= max {
+					max = v.totalMinutes
+					lazy = guards[k]
+				}
 			}
+			fmt.Printf("lazy guard[%v]\n", lazy)
+
+			max = 0
+			bingo := 0
+			for k, v := range lazy.sleepyMinutes {
+				if v > max {
+					max = v
+					bingo = k
+				}
+			}
+			fmt.Printf("sleepy minute[%d]\n", bingo)
+			x, _ := strconv.Atoi(strings.TrimPrefix(lazy.id, "#"))
+			fmt.Printf("%d X %d = %d\n", x, bingo, x*bingo)
 			os.Exit(0)
 		}
 		scrawls = append(scrawls, NewRaw(input))
