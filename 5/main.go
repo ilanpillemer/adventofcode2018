@@ -24,9 +24,8 @@ func (p polymer) react() polymer {
 }
 
 func (p polymer) remove(b string) polymer {
-	l := strings.ToLower(b)
-	u := strings.ToUpper(b)
-	// I know I KNOW
+	l, u := strings.ToLower(b), strings.ToUpper(b)
+	// I know, I KNOW
 	p = polymer(strings.Replace(string(p), l, "", -1))
 	return polymer(strings.Replace(string(p), u, "", -1))
 }
@@ -43,20 +42,17 @@ func main() {
 	r := bufio.NewReader(os.Stdin)
 	input, _ := r.ReadString('\n')
 	p := polymer(strings.TrimSpace(input)).react()
-	//fmt.Printf("final polymer is [%s]\n", p)
 	fmt.Printf("it has when fully reacted [%d] units\n", p.units())
 	for _, c := range alphabeta {
 		s := fmt.Sprintf("%c", c)
 		units := polymer(strings.TrimSpace(input)).remove(s).react().units()
-		fmt.Println(s,units)
+		fmt.Println(s, units)
 	}
-
 }
 
 func makeExplosions() [52]string {
 	var explosions [52]string
-	lower := alphabeta
-	upper := strings.ToUpper(lower)
+	lower, upper := alphabeta, strings.ToUpper(alphabeta)
 	for i := 0; i < 26; i++ {
 		explosions[i] = fmt.Sprintf("%c%c", lower[i], upper[i])
 		explosions[i+26] = fmt.Sprintf("%c%c", upper[i], lower[i])
