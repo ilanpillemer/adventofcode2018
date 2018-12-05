@@ -78,6 +78,18 @@ func (g *guard) update(input raw) {
 
 }
 
+func (g *guard) sleepiestMinute() (int, int) {
+	max := 0
+	var key int
+	for k, v := range g.sleepyMinutes {
+		if v > max {
+			max = v
+			key = k
+		}
+	}
+	return key, max
+}
+
 func main() {
 	scrawls := make([]raw, 0)
 	guards := make(map[string]guard)
@@ -101,6 +113,7 @@ func main() {
 				guards[currentGuardId] = g
 			}
 
+			// part 1
 			max := 0
 			var lazy guard
 
@@ -121,8 +134,28 @@ func main() {
 				}
 			}
 			fmt.Printf("sleepy minute[%d]\n", bingo)
+
+			// part 2
+			max = 0
+			var lethargic guard
+
+			for k, v := range guards {
+				_, amount := v.sleepiestMinute()
+				if amount >= max {
+					max = amount
+					lethargic = guards[k]
+				}
+			}
+			minute, amount := lethargic.sleepiestMinute()
+			fmt.Printf("lethargic guard[%v] slept at minute [%d], [%d] times\n", lethargic, minute, amount)
+
+			// part 1 output
 			x, _ := strconv.Atoi(strings.TrimPrefix(lazy.id, "#"))
 			fmt.Printf("%d X %d = %d\n", x, bingo, x*bingo)
+
+			// part 2 output
+			x2, _ := strconv.Atoi(strings.TrimPrefix(lethargic.id, "#"))
+			fmt.Printf("%d X %d = %d\n", x2, minute, x2*minute)
 			os.Exit(0)
 		}
 		scrawls = append(scrawls, NewRaw(input))
