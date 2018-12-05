@@ -13,9 +13,7 @@ import (
 // a little db
 
 type record struct {
-	date    time.Time // month-day eg 11-01
-	id      string    // eg #10
-	minutes [60]int   // could be a bit or a boolean for better space
+	minutes [60]int // could be a bit or a boolean for better space
 }
 
 const layout = "[2006-01-02 15:04]"
@@ -43,8 +41,45 @@ func (d byDate) Less(i, j int) bool {
 	return right.After(left)
 }
 
+type guard struct {
+	id            string
+	data          map[string]record
+	sleepyMinutes map[int]int
+	totalMinutes  int
+	asleep        bool
+	fellAsleep    int
+}
+
+func (g *guard) update(input raw) {
+	date, _ := time.Parse(layout, input.date)
+	key := fmt.Sprintf("%d-%d", date.Month(), date.Day())
+	record := g.data[key]
+	minute := date.Minute()
+	fallingAsleep := strings.Contains(input.rest, "falls asleep")
+	wakingUp := strings.Contains(input.rest, "wakes up")
+	if fallingAsleep {
+		g.asleep = true
+		g.fellAsleep = minute
+	}
+
+	if wakingUp {
+		g.asleep = false
+		for i := g.fellAsleep; i < date.Minute(); i++ {
+			if g.sleepyMinutes == nil {
+				g.sleepyMinutes = map[int]int{}
+			}
+			g.sleepyMinutes[i] = g.sleepyMinutes[i] + 1
+			record.minutes[i] = record.minutes[i] + 1
+			g.totalMinutes = g.totalMinutes + 1
+		}
+		g.fellAsleep = minute
+	}
+
+}
+
 func main() {
 	scrawls := make([]raw, 0)
+	guards := make(map[string]guard)
 
 	r := bufio.NewReader(os.Stdin)
 	for {
@@ -52,8 +87,20 @@ func main() {
 		if input == "" && err == io.EOF {
 			sort.Sort(byDate(scrawls))
 
+			currentGuardId := "#UNKNOWN"
 			for _, scrawl := range scrawls {
-				fmt.Println(scrawl)
+				//fmt.Println(scrawl)
+				if strings.Contains(scrawl.rest, "#") {
+					currentGuardId = strings.Fields(scrawl.rest)[1]
+					continue
+				}
+				g := guards[currentGuardId]
+				g.update(scrawl)
+				guards[currentGuardId] = g
+			}
+
+			for k, v := range guards {
+				fmt.Printf("guard[%s], totalAsleep[%d]\n", k, v.totalMinutes)
 			}
 			os.Exit(0)
 		}
