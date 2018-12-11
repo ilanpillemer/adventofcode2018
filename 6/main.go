@@ -61,6 +61,18 @@ func (g *grid) project() {
 	//log.Println(g.projected)
 }
 
+func (g *grid) projectSafe() {
+	for y := 0; y <= g.bottom+1000; y++ {
+		for x := 0; x <= g.right; x++ {
+			key := fmt.Sprintf("%d,%d", x, y)
+			c := howmany(pos{x, y}, g.locs)
+			g.projected[key] = c
+			//log.Printf("%d,%d --> %d", x, y, c)
+		}
+	}
+	//log.Println(g.projected)
+}
+
 //prints out the nice little projected grid
 func (g *grid) print() {
 	fmt.Println()
@@ -99,6 +111,28 @@ func (g *grid) getLargestNonInfiniteArea() {
 		}
 
 	}
+	fmt.Println(counts)
+	max := 0
+	key := ""
+	for k, v := range counts {
+		if v > max {
+			key = k
+			max = v
+		}
+	}
+	fmt.Println("max", counts[key])
+
+}
+
+func (g *grid) getSafeArea() {
+	counts := make(map[string]int)
+
+	//count the areas
+	for _, v := range g.projected {
+		key := fmt.Sprintf("%c", (v%64)+65)
+		counts[key] = counts[key] + 1
+	}
+
 	fmt.Println(counts)
 	max := 0
 	key := ""
@@ -151,6 +185,21 @@ func closest(a pos, locs []pos) (int, pos) {
 	return index, p
 }
 
+func howmany(a pos, locs []pos) int {
+
+	tot := 0
+
+	for _, l := range locs {
+		mh := manh(a, l)
+		tot = tot + mh
+
+	}
+	if tot < 10000 {
+		return 1
+	}
+	return 10
+}
+
 func main() {
 	r := bufio.NewReader(os.Stdin)
 	locations := make([]pos, 0)
@@ -163,6 +212,10 @@ func main() {
 			g.project()
 			//g.print()
 			g.getLargestNonInfiniteArea()
+
+			g.projectSafe()
+			g.print()
+			g.getSafeArea()
 			log.Println("Bye..")
 			os.Exit(0)
 		}
