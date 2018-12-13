@@ -17,12 +17,8 @@ func TestProcess(t *testing.T) {
 	}
 	edges := process(all)
 	nodes := createNodes(edges)
-
-	fmt.Println("ends", ends(nodes))
-	fmt.Println("starts", starts(nodes))
-	fmt.Println(edges)
-	fmt.Println(nodes)
-
+	root := addRoot(starts(nodes))
+	walk(root)
 
 	tests := []struct {
 		index string
@@ -30,7 +26,7 @@ func TestProcess(t *testing.T) {
 	}{
 		{"A", "{id:A outs:[{from:A to:B} {from:A to:D}] ins:[{from:C to:A}]}"},
 		{"B", "{id:B outs:[{from:B to:E}] ins:[{from:A to:B}]}"},
-		{"C", "{id:C outs:[{from:C to:A} {from:C to:F}] ins:[]}"},
+		{"C", "{id:C outs:[{from:C to:A} {from:C to:F}] ins:[{from:_ to:C}]}"},
 		{"D", "{id:D outs:[{from:D to:E}] ins:[{from:A to:D}]}"},
 		{"E", "{id:E outs:[] ins:[{from:B to:E} {from:D to:E} {from:F to:E}]}"},
 		{"F", "{id:F outs:[{from:F to:E}] ins:[{from:C to:F}]}"},
@@ -41,5 +37,9 @@ func TestProcess(t *testing.T) {
 		if got := fmt.Sprintf("%+v", nodes[test.index]); got != test.want {
 			t.Errorf("want [%s], got [%s]", test.want, got)
 		}
+	}
+
+	if order != "_CABDFE" {
+		t.Errorf("want %s got %s", "CABDFE", order)
 	}
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sort"
 	"strings"
 )
 
@@ -17,6 +18,88 @@ type node struct {
 	id   string
 	outs []edge
 	ins  []edge
+}
+
+var nodes map[string]node
+
+var todo = "_ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+var available = "_"
+
+var order = ""
+
+func add(id string) {
+	if strings.Contains(todo, id) && !strings.Contains(available, id) && complete(id) {
+		available += id
+	}
+
+}
+
+func rejig() {
+	//pun intended
+	//fmt.Println(available)
+	runed := []rune(available)
+	sort.Slice(runed, func(i, j int) bool {
+		return runed[i] < runed[j]
+	})
+	available = string(runed)
+	//fmt.Println(available)
+}
+
+func do() bool {
+
+	if len(todo) == 0 {
+		fmt.Println("all done")
+		return true
+	}
+
+	if len(available) == 0 {
+		return true
+		//panic("nothing available.")
+	}
+	rejig()
+	next := string(available[0])
+	if strings.Contains(todo, next) {
+		//fmt.Printf("%s", next)
+		order = order + next
+		todo = strings.Replace(todo, next, "", 1)
+		available = strings.Replace(available, next, "", 1)
+		o := nodes[next]
+		for _, out := range o.outs {
+			add(out.to)
+		}
+		do()
+
+	} else {
+		//no-op
+	}
+	return false
+}
+
+func addRoot(starts []node) node {
+	root := node{id: "_"}
+
+	for _, n := range starts {
+		e := edge{"_", n.id}
+		root.outs = append(root.outs, e)
+		s := nodes[n.id]
+		s.ins = append(s.ins, e)
+		nodes[n.id] = s
+	}
+	nodes["_"] = root
+	return root
+}
+
+func complete(id string) bool {
+	ins := nodes[id]
+	//fmt.Println(ins.id, "ins", ins.ins)
+	for _, in := range ins.ins {
+		//fmt.Println("in", in)
+		if strings.Contains(todo, in.from) {
+			return false
+		}
+
+	}
+	return true
 }
 
 func (e edge) String() string {
@@ -54,7 +137,7 @@ func process(input []string) []edge {
 }
 
 func createNodes(edges []edge) map[string]node {
-	nodes := make(map[string]node)
+	nodes = make(map[string]node)
 	for _, e := range edges {
 		in, ok := nodes[e.from]
 		if !ok {
@@ -70,7 +153,14 @@ func createNodes(edges []edge) map[string]node {
 		out.ins = append(out.ins, e)
 		nodes[e.to] = out
 	}
+
 	return nodes
+}
+
+func walk(n node) {
+	add(n.id)
+	do()
+	fmt.Println()
 }
 
 func main() {
@@ -81,10 +171,9 @@ func main() {
 		if strings.TrimSpace(line) == "" && err == io.EOF {
 			edges := process(all)
 			nodes := createNodes(edges)
-				fmt.Println("ends", ends(nodes))
-	fmt.Println("starts", starts(nodes))
-			fmt.Println(edges)
-		
+			root := addRoot(starts(nodes))
+			walk(root)
+			fmt.Println(order)
 			os.Exit(0)
 		}
 		all = append(all, strings.TrimSpace(line))
