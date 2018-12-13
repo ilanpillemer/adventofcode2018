@@ -6,7 +6,6 @@ import (
 )
 
 func TestProcess(t *testing.T) {
-
 	all := []string{
 		"Step C must be finished before step A can begin.",
 		"Step C must be finished before step F can begin.",
@@ -16,38 +15,31 @@ func TestProcess(t *testing.T) {
 		"Step D must be finished before step E can begin.",
 		"Step F must be finished before step E can begin.",
 	}
-	process(all)
-	root.init()
+	edges := process(all)
+	s := starts(edges)
+	fmt.Println(edges)
+	fmt.Println("starts", s)
+	root := &node{}
+	root.init(s)
+	root.construct(edges, 0)
 
-	root.display(0)
+	tests := []struct {
+		index string
+		want  string
+	}{
+		{"ROOT", "&{ROOT [{ROOT C}]}"},
+		{"A", "&{A [{A B} {A D}]}"},
+		{"B", "&{B [{B E}]}"},
+		{"C", "&{C [{C A} {C F}]}"},
+		{"D", "&{D [{D E}]}"},
+		{"E", "&{E []}"},
+		{"F", "&{F [{F E}]}"},
+	}
 
-	root.order()
-	output := fmt.Sprint(ordered)
-	if output != "CABDFE" {
-		t.Errorf("want [%s] got [%s]\n", "CABDFE", output)
+	for _, test := range tests {
+
+		if got := fmt.Sprint(nodes[test.index]); got != test.want {
+			t.Errorf("want [%s], got [%s]", test.want, got)
+		}
 	}
 }
-
-func TestProcess2(t *testing.T) {
-
-	all := []string{
-		"Step A must be finished before step B can begin.",
-		"Step A must be finished before step D can begin.",
-		"Step B must be finished before step E can begin.",
-		"Step D must be finished before step E can begin.",
-		"Step F must be finished before step E can begin.",
-		"Step C must be finished before step A can begin.",
-		"Step C must be finished before step F can begin.",
-	}
-		process(all)
-	root.init()
-
-	root.display(0)
-
-	root.order()
-	output := fmt.Sprint(ordered)
-	if output != "CABDFE" {
-		t.Errorf("want [%s] got [%s]\n", "CABDFE", output)
-	}
-}
-

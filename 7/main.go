@@ -9,140 +9,135 @@ import (
 	"strings"
 )
 
+type edge struct {
+	from string
+	to   string
+}
+
 type node struct {
-	id   string
-	next []*node
+	id    string
+	edges []edge
 }
 
-var root = &node{}
+var nodes = make(map[string]*node)
+var added = make(map[string]bool)
 
-func (n *node) lookup(id string) (*node, bool) {
-	if n.id == "" {
-		n.id = id
-		return n, true
-	}
+func (n *node) init(s []string) {
 
-	if n.id == id {
-		return n, true
-	}
-
-	for _, next := range n.next {
-		found, ok := next.lookup(id)
-		if ok {
-			return found, true
+	n.id = "ROOT"
+	n.edges = make([]edge, 0)
+	for _, id := range s {
+		edge := edge{
+			from: "ROOT",
+			to:   id,
 		}
+		n.edges = append(n.edges, edge)
 	}
-	return nil, false
-}
-
-func (n *node) display(i int) {
-	fmt.Print(strings.Repeat(".", i))
-	fmt.Println(n.id)
-	for _, next := range n.next {
-		next.display(i + 4)
-	}
-}
-
-var ordered string
-
-func (n *node) init() {
-	root = &node{}
-	ordered = ""
-}
-
-func (n *node) order() {
-	ordered = strings.Replace(ordered, n.id, "", -1)
-	ordered += n.id
-	sort.Slice(n.next, func(i, j int) bool {
-		return n.next[i].id < n.next[j].id
+	sort.Slice(n.edges, func(i, j int) bool {
+		return n.edges[i].to < n.edges[j].to
 	})
-	for _, next := range n.next {
-		next.order()
-	}
+	nodes[n.id] = n
 }
 
+func (n *node) construct(edges []edge, depth int) {
+	//	fmt.Print(".")
+	//	fmt.Println(edges)
 
+	sort.Slice(n.edges, func(i, j int) bool {
+		return n.edges[i].to < n.edges[j].to
+	})
+	sort.Slice(edges, func(i, j int) bool {
+		return edges[i].to < edges[j].to
+	})
 
-
-// https://en.wikipedia.org/wiki/Topological_sorting
-//L ← Empty list that will contain the sorted elements
-//S ← Set of all nodes with no incoming edge
-//while S is non-empty do
-//    remove a node n from S
-//    add n to tail of L
-//    for each node m with an edge e from n to m do
-//        remove edge e from the graph
-//        if m has no other incoming edges then
-//            insert m into S
-//if graph has edges then
-//    return error   (graph has at least one cycle)
-//else
-//    return L   (a topologically sorted order)
-func process(all []string) {
-	nodes := make(map[string][]string)
-	for _, line := range all {
-		fields := strings.Fields(line)
-		id, nextid := fields[1], fields[7]
-		deps := nodes[id]
-		deps = append(deps, nextid)
-		nodes[id] = deps
-	}
-
-	var start = ""
-
-	for k, _ := range nodes {
-		found := true
-		for _, v := range nodes {
-			for _, dep := range v {
-				if k == dep {
-					found = false
+	// all the edges in the current node
+	for _, ne := range n.edges {
+		// all possible edges
+		for i, me := range edges {
+			if ne.to == me.from {
+				//				found = true
+				next, ok := nodes[ne.to]
+				if !ok {
+					next = &node{id: ne.to}
 				}
+				lessedges := make([]edge, len(edges))
+				copy(lessedges, edges)
+
+				lessedges = append(lessedges[:i], lessedges[i+1:]...)
+				fmt.Println(lessedges)
+				_, ok = added[next.id+me.String()]
+				if !ok {
+					next.edges = append(next.edges, me)
+					added[next.id+me.String()] = true
+					//					fmt.Println(len(edges))
+					//					fmt.Println(i)
+					//					fmt.Println(edges)
+
+				}
+
+				nodes[ne.to] = next
+				next.construct(lessedges, depth+1)
 			}
 		}
-		if found {
-			start = k
-			break
-		}
-	}
-	fmt.Println("start", start)
-	L := make([]map[string][]string, 0)
-	item := make(map[string][]string)
-	item[start] = nodes[start]
-	L = append(L, item)
-	delete(nodes, start)
-	fmt.Println("L", L)
-	fmt.Println("ALL", nodes)
-
-	for _, v := range item {
-		for _,next := range v {
-			item := make(map[string][]string)
-			item[next] = nodes[next]
-			L = append(L, item)
-			delete(nodes, next)
-			fmt.Println("L", L)
-			fmt.Println("ALL", nodes)
+		next, ok := nodes[ne.to]
+		if !ok {
+			next = &node{id: ne.to}
+			nodes[ne.to] = next
+			next.construct(edges, depth+1)
 		}
 	}
 }
 
+func (e edge) String() string {
+	return e.from + "->" + e.to
+}
 
-func (n *node) makeGraph(start string, edges map[string][]string) {
+func starts(edges []edge) (starts []string) {
+	froms := make(map[string]bool)
+	tos := make(map[string]bool)
+	for _, e := range edges {
+		froms[e.from] = true
+		tos[e.to] = true
+	}
 
+	for k, _ := range tos {
+		delete(froms, k)
+	}
 
+	for k, _ := range froms {
+		starts = append(starts, k)
+	}
+	return
+}
+
+//var root = &node{}
+
+func process(input []string) []edge {
+	edges := make([]edge, 0)
+	for _, line := range input {
+		fields := strings.Fields(line)
+		e := edge{fields[1], fields[7]}
+		edges = append(edges, e)
+	}
+	//fmt.Printf("edges : %v\n", edges)
+	return edges
 }
 
 func main() {
-	input := make([]string, 0)
 	r := bufio.NewReader(os.Stdin)
+	all := make([]string, 0)
 	for {
 		line, err := r.ReadString('\n')
 		if strings.TrimSpace(line) == "" && err == io.EOF {
-			root.init()
-			root.order()
-			fmt.Println(ordered)
+			edges := process(all)
+			s := starts(edges)
+			fmt.Println(edges)
+			fmt.Println("starts", s)
+			root := &node{}
+			root.init(s)
+			root.construct(edges, 0)
 			os.Exit(0)
 		}
-		input = append(input, (strings.TrimSpace(line)))
+		all = append(all, strings.TrimSpace(line))
 	}
-
 }
