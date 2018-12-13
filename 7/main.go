@@ -36,13 +36,11 @@ func add(id string) {
 
 func rejig() {
 	//pun intended
-	//fmt.Println(available)
 	runed := []rune(available)
 	sort.Slice(runed, func(i, j int) bool {
 		return runed[i] < runed[j]
 	})
 	available = string(runed)
-	//fmt.Println(available)
 }
 
 func do() bool {
@@ -54,12 +52,10 @@ func do() bool {
 
 	if len(available) == 0 {
 		return true
-		//panic("nothing available.")
 	}
 	rejig()
 	next := string(available[0])
 	if strings.Contains(todo, next) {
-		//fmt.Printf("%s", next)
 		order = order + next
 		todo = strings.Replace(todo, next, "", 1)
 		available = strings.Replace(available, next, "", 1)
@@ -68,9 +64,6 @@ func do() bool {
 			add(out.to)
 		}
 		do()
-
-	} else {
-		//no-op
 	}
 	return false
 }
@@ -91,9 +84,7 @@ func addRoot(starts []node) node {
 
 func complete(id string) bool {
 	ins := nodes[id]
-	//fmt.Println(ins.id, "ins", ins.ins)
 	for _, in := range ins.ins {
-		//fmt.Println("in", in)
 		if strings.Contains(todo, in.from) {
 			return false
 		}
