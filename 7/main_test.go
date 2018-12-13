@@ -16,29 +16,27 @@ func TestProcess(t *testing.T) {
 		"Step F must be finished before step E can begin.",
 	}
 	edges := process(all)
+	nodes := createNodes(edges)
 	s := starts(edges)
 	fmt.Println(edges)
+	fmt.Println(nodes)
 	fmt.Println("starts", s)
-	root := &node{}
-	root.init(s)
-	root.construct(edges, 0)
 
 	tests := []struct {
 		index string
 		want  string
 	}{
-		{"ROOT", "&{ROOT [{ROOT C}]}"},
-		{"A", "&{A [{A B} {A D}]}"},
-		{"B", "&{B [{B E}]}"},
-		{"C", "&{C [{C A} {C F}]}"},
-		{"D", "&{D [{D E}]}"},
-		{"E", "&{E []}"},
-		{"F", "&{F [{F E}]}"},
+		{"A", "{id:A outs:[{from:A to:B} {from:A to:D}] ins:[{from:C to:A}]}"},
+		{"B", "{id:B outs:[{from:B to:E}] ins:[{from:A to:B}]}"},
+		{"C", "{id:C outs:[{from:C to:A} {from:C to:F}] ins:[]}"},
+		{"D", "{id:D outs:[{from:D to:E}] ins:[{from:A to:D}]}"},
+		{"E", "{id:E outs:[] ins:[{from:B to:E} {from:D to:E} {from:F to:E}]}"},
+		{"F", "{id:F outs:[{from:F to:E}] ins:[{from:C to:F}]}"},
 	}
 
 	for _, test := range tests {
 
-		if got := fmt.Sprint(nodes[test.index]); got != test.want {
+		if got := fmt.Sprintf("%+v", nodes[test.index]); got != test.want {
 			t.Errorf("want [%s], got [%s]", test.want, got)
 		}
 	}
