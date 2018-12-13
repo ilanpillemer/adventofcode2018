@@ -17,10 +17,12 @@ func TestProcess(t *testing.T) {
 	}
 	edges := process(all)
 	nodes := createNodes(edges)
-	s := starts(edges)
+
+	fmt.Println("ends", ends(nodes))
+	fmt.Println("starts", starts(nodes))
 	fmt.Println(edges)
 	fmt.Println(nodes)
-	fmt.Println("starts", s)
+
 
 	tests := []struct {
 		index string
