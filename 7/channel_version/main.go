@@ -306,7 +306,7 @@ func main() {
 		if strings.TrimSpace(line) == "" && err == io.EOF {
 			oneWorker(all, "_ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 			fmt.Println("ordered", order)
-os.Exit(0)
+			os.Exit(0)
 		}
 		all = append(all, strings.TrimSpace(line))
 	}

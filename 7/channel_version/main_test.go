@@ -31,7 +31,7 @@ func TestProcessOneWorker(t *testing.T) {
 			ticker <- struct{}{}
 
 			fmt.Println("time ticked globally")
-			fmt.Println("time is waiting for santa")
+			fmt.Printf("time is waiting for %s\n", worker1)
 			<-worker1C // wait for santa
 			fmt.Printf("%s announced that he had a moment\n", worker1)
 			if len(available.GetTodo()) == 0 {
@@ -82,10 +82,12 @@ func TestProcessTwoWorkers(t *testing.T) {
 	nodes := createNodes(edges)
 	root := addRoot(starts(nodes))
 	initSleigh("_ABCDEF")
+	count := 0
 	go func() {
 		worker1 := "ozzy"
 		worker2 := "cesar"
 		for {
+			count++
 			// make sure available is updated for next tick
 			available.update()
 			worker1C := make(chan struct{})
@@ -110,6 +112,7 @@ func TestProcessTwoWorkers(t *testing.T) {
 		}
 	}()
 	assemble(root)
+	fmt.Println("ticks", count-1)
 
 	tests := []struct {
 		index string
