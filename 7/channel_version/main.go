@@ -29,9 +29,10 @@ var UniversalTickerTime = make(chan struct{})
 
 type availableQ struct {
 	sync.Mutex
-	steps string
-	todo  string
-	ready string
+	steps  string
+	todo   string
+	ready  string
+	offset int
 }
 
 //var todo = "_ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -48,14 +49,13 @@ func (a *availableQ) pop() (rune, int) {
 	}
 
 	a.prioritise()
-	fmt.Println("prioritised", a.steps)
 	p := a.steps[0]
 	a.steps = strings.Replace(a.steps, string(p), "", 1)
-	//fmt.Println(string(p), p-64)
+
 	if string(p) == "_" {
 		return rune(p), 1
 	}
-	return rune(p), int(p - 64)
+	return rune(p), int(p-64) + a.offset
 }
 
 func (a *availableQ) push(id string) {
@@ -112,11 +112,12 @@ func (a *availableQ) LeftTodo() int {
 
 var assembled = make(chan struct{})
 
-func initSleigh(todo string) {
+func initSleigh(todo string, offset int) {
 	//todo = "_ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	order = ""
 	available.clear()
 	available.setTodo(todo)
+	available.offset = offset
 
 	ticker = make(chan struct{})
 	cmap = make(map[string]cval)
@@ -147,15 +148,13 @@ type cval struct {
 
 func worker(id string, done chan<- struct{}) {
 	//wait for time to tick
-	fmt.Printf("%s is waiting for time\n", id)
 	<-ticker
-	fmt.Printf("time ticked for %s\n", id)
 	//check closure
 	state := cmap[id]
 	// if closure has something that can be finished this time slice
 	if state.cost == 1 {
 		//complete this step
-		fmt.Printf("%s is completing step %s\n", id, state.step)
+		fmt.Printf("%s, %s || ", id, state.step)
 		do(id, state.step)
 		//update closure
 		cmap[id] = cval{}
@@ -163,66 +162,56 @@ func worker(id string, done chan<- struct{}) {
 
 	// if closure has something that be worked on but is not finishable
 	if state.cost > 1 {
-		fmt.Printf("%s is working on step %s\n", id, state.step)
+		fmt.Printf("%s, %s || ", id, state.step)
 		cmap[id] = cval{state.step, state.cost - 1}
-		fmt.Printf("closure map now looks like this %v\n", cmap)
 	}
 
 	// if was idle previously and ready to take on work, check if there is anything available
 	if state.cost == 0 {
 		// if there is something available
-		fmt.Printf("is there is anything available for %s? %+v\n", id, available)
 		if available.size() != 0 {
 			r, cost := available.pop()
-			fmt.Printf("Yes, %s is available with cost %d.\n", string(r), cost)
 			cmap[id] = cval{string(r), cost}
-			fmt.Printf("closure map now looks like this %v\n", cmap)
 		}
 
 		//repeat same checks as above
 		state := cmap[id]
 		if state.cost == 1 {
 			//complete this step
-			fmt.Printf("%s is completing step %s\n", id, state.step)
+			fmt.Printf("%s, %s || ", id, state.step)
 			do("id", state.step)
 			//update closure
 			cmap[id] = cval{}
 		}
 		if state.cost > 1 {
-			fmt.Printf("%s works at %s\n", id, state.step)
+			fmt.Printf("%s, %s || ", id, state.step)
 			cmap[id] = cval{state.step, state.cost - 1}
-			fmt.Printf("closure map now looks like this %v\n", cmap)
 		}
 	}
 
 	// if was idle previously and there is nothing available
 	if state.cost == 0 {
 		if available.size() == 0 {
-			// stay idle
+			fmt.Printf("%s, %s || ", id, state.step)
 		}
 	}
 	//indicate that santa is done
-	fmt.Printf("moment is over for %s\n", id)
 	done <- struct{}{}
 }
 
 func do(id string, step string) bool {
 
 	if strings.Contains(available.GetTodo(), step) {
-		fmt.Println(id, "doing", step, "STEPS done", order, available.GetTodo(), "available:", available.steps, available.size())
 		order = order + step
 		available.Lock()
 		available.setTodo(strings.Replace(available.GetTodo(), step, "", 1))
 		available.Unlock()
-		//fmt.Println(id, " says he has done STEP", step)
 		o := nodes[step]
 		for _, out := range o.outs {
-			fmt.Printf("adding %s to available.\n", out.to)
 			available.push(out.to)
 		}
 		return true
 	}
-	fmt.Printf("maybe this is the bug? worker %s step %s\n", id, step)
 	return false
 }
 
@@ -236,7 +225,7 @@ func oneWorker(all []string, sleigh string) {
 	edges := process(all)
 	nodes := createNodes(edges)
 	root := addRoot(starts(nodes))
-	initSleigh(sleigh)
+	initSleigh(sleigh, 0)
 
 	go func() {
 		worker1 := "ozzy"
@@ -266,7 +255,7 @@ func twoWorker(all []string, sleigh string) {
 	edges := process(all)
 	nodes := createNodes(edges)
 	root := addRoot(starts(nodes))
-	initSleigh(sleigh)
+	initSleigh(sleigh, 0)
 	go func() {
 		worker1 := "ozzy"
 		worker2 := "cesar"
@@ -281,7 +270,6 @@ func twoWorker(all []string, sleigh string) {
 			ticker <- struct{}{}
 			ticker <- struct{}{}
 
-			fmt.Println("time ticked ")
 			fmt.Println("time is waiting for worker 1 and worker 2")
 			<-worker1C // wait for worker1
 			fmt.Printf("%s announced that he had a moment\n", worker1)
@@ -297,6 +285,55 @@ func twoWorker(all []string, sleigh string) {
 	assemble(root)
 }
 
+func fiveWorker(all []string, sleigh string) {
+	edges := process(all)
+	nodes := createNodes(edges)
+	root := addRoot(starts(nodes))
+	initSleigh(sleigh, 60)
+	count := 0
+	go func() {
+		worker1 := "ilan "
+		worker2 := "cesar"
+		worker3 := "ozzy "
+		worker4 := "flo  "
+		worker5 := "erin i"
+		for {
+			// make sure available is updated for next tick
+			count++
+			available.update()
+			worker1C := make(chan struct{})
+			worker2C := make(chan struct{})
+			worker3C := make(chan struct{})
+			worker4C := make(chan struct{})
+			worker5C := make(chan struct{})
+			go worker(worker1, worker1C)
+			go worker(worker2, worker2C)
+			go worker(worker3, worker3C)
+			go worker(worker4, worker4C)
+			go worker(worker5, worker5C)
+			fmt.Println()
+			ticker <- struct{}{}
+			ticker <- struct{}{}
+			ticker <- struct{}{}
+			ticker <- struct{}{}
+			ticker <- struct{}{}
+
+			<-worker1C // wait for worker1
+			<-worker2C // wait for worker2
+			<-worker3C // wait for worker1
+			<-worker4C // wait for worker2
+			<-worker5C // wait for worker2
+
+			if len(available.GetTodo()) == 0 {
+				assembled <- struct{}{}
+				break
+			}
+		}
+	}()
+	assemble(root)
+	fmt.Println("ticks", count-1)
+}
+
 func main() {
 
 	r := bufio.NewReader(os.Stdin)
@@ -304,7 +341,7 @@ func main() {
 	for {
 		line, err := r.ReadString('\n')
 		if strings.TrimSpace(line) == "" && err == io.EOF {
-			oneWorker(all, "_ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+			fiveWorker(all, "_ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 			fmt.Println("ordered", order)
 			os.Exit(0)
 		}

@@ -18,7 +18,7 @@ func TestProcessOneWorker(t *testing.T) {
 	edges := process(all)
 	nodes := createNodes(edges)
 	root := addRoot(starts(nodes))
-	initSleigh("_ABCDEF")
+	initSleigh("_ABCDEF", 0)
 
 	go func() {
 		worker1 := "ozzy"
@@ -81,7 +81,7 @@ func TestProcessTwoWorkers(t *testing.T) {
 	edges := process(all)
 	nodes := createNodes(edges)
 	root := addRoot(starts(nodes))
-	initSleigh("_ABCDEF")
+	initSleigh("_ABCDEF", 0)
 	count := 0
 	go func() {
 		worker1 := "ozzy"
@@ -135,5 +135,9 @@ func TestProcessTwoWorkers(t *testing.T) {
 	//_CABFDE CABFDE
 	if order != "_CABFDE" {
 		t.Errorf("want %s got %s", "CABFDE", order)
+	}
+
+	if (count - 1) != 15 {
+		t.Errorf("wanted 15 got %d", count-1)
 	}
 }
