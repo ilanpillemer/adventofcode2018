@@ -155,7 +155,7 @@ func worker(id string, done chan<- struct{}) {
 	// if closure has something that can be finished this time slice
 	if state.cost == 1 {
 		//complete this step
-		fmt.Printf("%s is completing stepp %s\n", id, state.step)
+		fmt.Printf("%s is completing step %s\n", id, state.step)
 		do(id, state.step)
 		//update closure
 		cmap[id] = cval{}
@@ -232,19 +232,81 @@ func assemble(n node) {
 	<-assembled
 }
 
-func main() {
+func oneWorker(all []string, sleigh string) {
+	edges := process(all)
+	nodes := createNodes(edges)
+	root := addRoot(starts(nodes))
+	initSleigh(sleigh)
 
-	//go worker("rudolph")
+	go func() {
+		worker1 := "ozzy"
+		for {
+			// make sure available is updated for next tick
+			available.update()
+			worker1C := make(chan struct{})
+			go worker(worker1, worker1C)
+			fmt.Println("time is about to tick")
+			ticker <- struct{}{}
+
+			fmt.Println("time ticked globally")
+			fmt.Println("time is waiting for santa")
+			<-worker1C // wait for santa
+			fmt.Printf("%s announced that he had a moment\n", worker1)
+			if len(available.GetTodo()) == 0 {
+				fmt.Println("assembled with steps", order)
+				assembled <- struct{}{}
+				break
+			}
+		}
+	}()
+	assemble(root)
+}
+
+func twoWorker(all []string, sleigh string) {
+	edges := process(all)
+	nodes := createNodes(edges)
+	root := addRoot(starts(nodes))
+	initSleigh(sleigh)
+	go func() {
+		worker1 := "ozzy"
+		worker2 := "cesar"
+		for {
+			// make sure available is updated for next tick
+			available.update()
+			worker1C := make(chan struct{})
+			worker2C := make(chan struct{})
+			go worker(worker1, worker1C)
+			go worker(worker2, worker2C)
+			fmt.Println("time is about to tick")
+			ticker <- struct{}{}
+			ticker <- struct{}{}
+
+			fmt.Println("time ticked ")
+			fmt.Println("time is waiting for worker 1 and worker 2")
+			<-worker1C // wait for worker1
+			fmt.Printf("%s announced that he had a moment\n", worker1)
+			<-worker2C // wait for worker2
+			fmt.Printf("%s announced that he had a moment\n", worker2)
+			if len(available.GetTodo()) == 0 {
+				fmt.Println("assembled with steps", order)
+				assembled <- struct{}{}
+				break
+			}
+		}
+	}()
+	assemble(root)
+}
+
+func main() {
 
 	r := bufio.NewReader(os.Stdin)
 	all := make([]string, 0)
 	for {
 		line, err := r.ReadString('\n')
 		if strings.TrimSpace(line) == "" && err == io.EOF {
-			edges := process(all)
-			nodes := createNodes(edges)
-			root := addRoot(starts(nodes))
-			assemble(root)
+			oneWorker(all, "_ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+			fmt.Println("ordered", order)
+os.Exit(0)
 		}
 		all = append(all, strings.TrimSpace(line))
 	}
