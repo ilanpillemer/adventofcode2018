@@ -23,15 +23,26 @@ type node struct {
 var nodes map[string]node
 
 var todo = "_ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+var times = makeTimes()
 var available = "_"
-
 var order = ""
+var timing = 0
+
+func makeTimes() map[rune]int {
+	times := make(map[rune]int)
+	for i, r := range todo {
+		if i == 0 {
+			continue
+		}
+		times[r] = 60 + i
+	}
+	return times
+}
 
 func add(id string) {
 	if strings.Contains(todo, id) && !strings.Contains(available, id) && complete(id) {
 		available += id
 	}
-
 }
 
 func rejig() {
@@ -154,6 +165,12 @@ func walk(n node) {
 	fmt.Println()
 }
 
+func walkConcurrent(n node) {
+	add(n.id)
+	do()
+	fmt.Println()
+}
+
 func main() {
 	r := bufio.NewReader(os.Stdin)
 	all := make([]string, 0)
@@ -165,8 +182,10 @@ func main() {
 			root := addRoot(starts(nodes))
 			walk(root)
 			fmt.Println(order)
-			os.Exit(0)
+			goto part2
 		}
 		all = append(all, strings.TrimSpace(line))
 	}
+part2:
+fmt.Println("welcome to part2")
 }

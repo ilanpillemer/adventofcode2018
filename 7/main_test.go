@@ -43,3 +43,23 @@ func TestProcess(t *testing.T) {
 		t.Errorf("want %s got %s", "CABDFE", order)
 	}
 }
+
+func TestConcurrent(t *testing.T) {
+	all := []string{
+		"Step C must be finished before step A can begin.",
+		"Step C must be finished before step F can begin.",
+		"Step A must be finished before step B can begin.",
+		"Step A must be finished before step D can begin.",
+		"Step B must be finished before step E can begin.",
+		"Step D must be finished before step E can begin.",
+		"Step F must be finished before step E can begin.",
+	}
+	edges := process(all)
+	nodes := createNodes(edges)
+	root := addRoot(starts(nodes))
+	walkConcurrent(root)
+
+	if timing != 15 {
+		t.Errorf("want %d got %d", 15, timing)
+	}
+}
