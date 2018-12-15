@@ -133,6 +133,75 @@ func addRoot(starts []node) node {
 	return root
 }
 
+var ticker = make(chan struct{})
+var cmap = make(map[string]cval)
+
+type cval struct {
+	step string
+	cost int
+}
+
+func worker(id string, done chan<- struct{}) {
+	//wait for time to tick
+	fmt.Printf("%s is waiting for time\n", id)
+	<-ticker
+	fmt.Printf("time ticked for %s\n", id)
+	//check closure
+	state := cmap[id]
+	// if closure has something that can be finished this time slice
+	if state.cost == 1 {
+		//complete this step
+		fmt.Printf("%s is completing stepp %s\n", id, state.step)
+		do(id, state.step)
+		//update closure
+		cmap[id] = cval{}
+	}
+
+	// if closure has something that be worked on but is not finishable
+	if state.cost > 1 {
+		fmt.Printf("%s is working on step %s\n", id, state.step)
+		cmap[id] = cval{state.step, state.cost - 1}
+		fmt.Printf("closure map now looks like this %v\n", cmap)
+	}
+
+	// if was idle previously and ready to take on work, check if there is anything available
+	if state.cost == 0 {
+		// if there is something available
+		fmt.Printf("is there is anything available for %s? %+v\n", id, available)
+		if available.size() != 0 {
+			r, cost := available.pop()
+			fmt.Printf("Yes, %s is available with cost %d.\n", string(r), cost)
+			cmap[id] = cval{string(r), cost}
+			fmt.Printf("closure map now looks like this %v\n", cmap)
+		}
+
+		//repeat same checks as above
+		state := cmap[id]
+		if state.cost == 1 {
+			//complete this step
+			fmt.Printf("%s is completing step %s\n", id, state.step)
+			do("id", state.step)
+			//update closure
+			cmap[id] = cval{}
+		}
+		if state.cost > 1 {
+			fmt.Printf("%s works at %s\n", id, state.step)
+			cmap[id] = cval{state.step, state.cost - 1}
+			fmt.Printf("closure map now looks like this %v\n", cmap)
+		}
+	}
+
+	// if was idle previously and there is nothing available
+	if state.cost == 0 {
+		if available.size() == 0 {
+			// stay idle
+		}
+	}
+	//indicate that santa is done
+	fmt.Printf("moment is over for %s\n", id)
+	done <- struct{}{}
+}
+
 func do(id string, step string) bool {
 
 	if strings.Contains(available.GetTodo(), step) {

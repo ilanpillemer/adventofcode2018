@@ -19,106 +19,27 @@ func TestProcessOneWorker(t *testing.T) {
 	nodes := createNodes(edges)
 	root := addRoot(starts(nodes))
 	initSleigh("_ABCDEF")
-	//initSleigh("ABCDEF")
-	ticker := make(chan struct{})
-
-	//	wg.Add(10000)
-	//go worker("santa", ticker)
-
-	// closure begins here
-
-	type cval struct {
-		step string
-		cost int
-	}
-	cmap := make(map[string]cval)
-	santa := make(chan struct{})
-	santago := func(<-chan struct{}) {
-		//wait for time to tick
-		fmt.Println("santa is waiting for time")
-		<-ticker
-		fmt.Println("time ticked for Santa")
-		//check closure
-		state := cmap["santa"]
-		// if closure has something that can be finished this time slice
-		if state.cost == 1 {
-			//complete this step
-			fmt.Println("santa is completing step", state.step)
-			do("santa", state.step)
-			//update closure
-			cmap["santa"] = cval{}
-		}
-
-		// if closure has something that be worked on but is not finishable
-		if state.cost > 1 {
-			fmt.Println("santa is working on step", state.step)
-			cmap["santa"] = cval{state.step, state.cost - 1}
-			fmt.Printf("closure map now looks like this %v\n", cmap)
-		}
-
-		// if was idle previously and ready to take on work, check if there is anything available
-		if state.cost == 0 {
-			// if there is something available
-			fmt.Printf("is there is anything available for santa? %+v\n", available)
-			if available.size() != 0 {
-				r, cost := available.pop()
-				fmt.Printf("Yes, %s is available with cost %d.\n", string(r), cost)
-				cmap["santa"] = cval{string(r), cost}
-				fmt.Printf("closure map now looks like this %v\n", cmap)
-			}
-
-			//repeat same checks as above
-			state := cmap["santa"]
-			if state.cost == 1 {
-				//complete this step
-				fmt.Println("santa is completing step", state.step)
-				do("santa", state.step)
-				//update closure
-				cmap["santa"] = cval{}
-			}
-			if state.cost > 1 {
-				fmt.Println("santa works at", state.step)
-				cmap["santa"] = cval{state.step, state.cost - 1}
-				fmt.Printf("closure map now looks like this %v\n", cmap)
-			}
-		}
-
-		// if was idle previously and there is nothing available
-		if state.cost == 0 {
-			if available.size() == 0 {
-				// stay idle
-			}
-		}
-		//indicate that santa is done
-		fmt.Println("moment is over for santa")
-		santa <- struct{}{}
-
-	}
 
 	go func() {
-		for i := 0; i < 600; i++ {
+		worker1 := "ozzy"
+		for {
 			// make sure available is updated for next tick
 			available.update()
-			go santago(santa)
+			worker1C := make(chan struct{})
+			go worker(worker1, worker1C)
 			fmt.Println("time is about to tick")
 			ticker <- struct{}{}
 
 			fmt.Println("time ticked globally")
 			fmt.Println("time is waiting for santa")
-			<-santa // wait for santa
-			fmt.Println("santa announced that he had a moment")
+			<-worker1C // wait for santa
+			fmt.Printf("%s announced that he had a moment\n", worker1)
 			if len(available.GetTodo()) == 0 {
-			fmt.Println("assembled with steps",order)
+				fmt.Println("assembled with steps", order)
 				assembled <- struct{}{}
 			}
-			//fmt.Printf("%#v\n", available)
-			//available.update()
-			//fmt.Println(available)
 		}
 	}()
-	fmt.Println("nodes", nodes)
-	fmt.Println("C", nodes["C"])
-	//assemble(nodes["C"])
 	assemble(root)
 
 	tests := []struct {
@@ -160,20 +81,24 @@ func TestProcessTwoWorkers(t *testing.T) {
 	nodes := createNodes(edges)
 	root := addRoot(starts(nodes))
 	initSleigh("_ABCDEF")
-	tickerC := make(chan struct{})
-	tickerO := make(chan struct{})
-
-	//	go worker("cesar", tickerC)
-	//	go worker("ozzy", tickerO)
 	go func() {
-		for i := 0; i < 60; i++ {
-			//fmt.Println("****** Second ****** ", i-31)
-			// they must wait for each other here
-			// any newly available tasks should only be released next tick
-			tickerC <- struct{}{}
-			tickerO <- struct{}{}
+		worker1 := "ozzy"
+		for {
+			// make sure available is updated for next tick
 			available.update()
+			worker1C := make(chan struct{})
+			go worker(worker1, worker1C)
+			fmt.Println("time is about to tick")
+			ticker <- struct{}{}
 
+			fmt.Println("time ticked globally")
+			fmt.Println("time is waiting for santa")
+			<-worker1C // wait for santa
+			fmt.Printf("%s announced that he had a moment\n", worker1)
+			if len(available.GetTodo()) == 0 {
+				fmt.Println("assembled with steps", order)
+				assembled <- struct{}{}
+			}
 		}
 	}()
 	assemble(root)
