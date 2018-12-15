@@ -37,6 +37,7 @@ func TestProcessOneWorker(t *testing.T) {
 			if len(available.GetTodo()) == 0 {
 				fmt.Println("assembled with steps", order)
 				assembled <- struct{}{}
+				break
 			}
 		}
 	}()
@@ -98,6 +99,7 @@ func TestProcessTwoWorkers(t *testing.T) {
 			if len(available.GetTodo()) == 0 {
 				fmt.Println("assembled with steps", order)
 				assembled <- struct{}{}
+				break
 			}
 		}
 	}()
