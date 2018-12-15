@@ -84,18 +84,24 @@ func TestProcessTwoWorkers(t *testing.T) {
 	initSleigh("_ABCDEF")
 	go func() {
 		worker1 := "ozzy"
+		worker2 := "cesar"
 		for {
 			// make sure available is updated for next tick
 			available.update()
 			worker1C := make(chan struct{})
+			worker2C := make(chan struct{})
 			go worker(worker1, worker1C)
+			go worker(worker2, worker2C)
 			fmt.Println("time is about to tick")
 			ticker <- struct{}{}
+			ticker <- struct{}{}
 
-			fmt.Println("time ticked globally")
-			fmt.Println("time is waiting for santa")
-			<-worker1C // wait for santa
+			fmt.Println("time ticked ")
+			fmt.Println("time is waiting for worker 1 and worker 2")
+			<-worker1C // wait for worker1
 			fmt.Printf("%s announced that he had a moment\n", worker1)
+			<-worker2C // wait for worker2
+			fmt.Printf("%s announced that he had a moment\n", worker2)
 			if len(available.GetTodo()) == 0 {
 				fmt.Println("assembled with steps", order)
 				assembled <- struct{}{}

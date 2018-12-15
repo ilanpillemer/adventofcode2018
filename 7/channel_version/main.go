@@ -117,10 +117,9 @@ func initSleigh(todo string) {
 	order = ""
 	available.clear()
 	available.setTodo(todo)
-	
-	
+
 	ticker = make(chan struct{})
-cmap = make(map[string]cval)
+	cmap = make(map[string]cval)
 
 }
 
