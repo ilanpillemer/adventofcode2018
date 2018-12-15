@@ -140,6 +140,7 @@ func addRoot(starts []node) node {
 
 var ticker = make(chan struct{})
 var cmap = make(map[string]cval)
+var l sync.Mutex
 
 type cval struct {
 	step string
@@ -149,21 +150,31 @@ type cval struct {
 func worker(id string, done chan<- struct{}) {
 	//wait for time to tick
 	<-ticker
+	defer func() {
+		done <- struct{}{}
+	}()
 	//check closure
+	l.Lock()
 	state := cmap[id]
+	l.Unlock()
 	// if closure has something that can be finished this time slice
 	if state.cost == 1 {
 		//complete this step
 		fmt.Printf("%s, %s || ", id, state.step)
 		do(id, state.step)
 		//update closure
+		l.Lock()
 		cmap[id] = cval{}
+		l.Unlock()
+		return
 	}
 
 	// if closure has something that be worked on but is not finishable
 	if state.cost > 1 {
 		fmt.Printf("%s, %s || ", id, state.step)
+		l.Lock()
 		cmap[id] = cval{state.step, state.cost - 1}
+		l.Unlock()
 	}
 
 	// if was idle previously and ready to take on work, check if there is anything available
@@ -171,32 +182,38 @@ func worker(id string, done chan<- struct{}) {
 		// if there is something available
 		if available.size() != 0 {
 			r, cost := available.pop()
+			l.Lock()
 			cmap[id] = cval{string(r), cost}
+			l.Unlock()
 		}
 
 		//repeat same checks as above
+		l.Lock()
 		state := cmap[id]
+		l.Unlock()
 		if state.cost == 1 {
 			//complete this step
 			fmt.Printf("%s, %s || ", id, state.step)
 			do("id", state.step)
 			//update closure
+			l.Lock()
 			cmap[id] = cval{}
+			l.Unlock()
+			return
 		}
 		if state.cost > 1 {
 			fmt.Printf("%s, %s || ", id, state.step)
+			l.Lock()
 			cmap[id] = cval{state.step, state.cost - 1}
+			l.Unlock()
+			return
+		}
+
+		if available.size() == 0 {
+			fmt.Printf("%s, %s || ", id, ".")
 		}
 	}
 
-	// if was idle previously and there is nothing available
-	if state.cost == 0 {
-		if available.size() == 0 {
-			fmt.Printf("%s, %s || ", id, state.step)
-		}
-	}
-	//indicate that santa is done
-	done <- struct{}{}
 }
 
 func do(id string, step string) bool {
@@ -295,8 +312,8 @@ func fiveWorker(all []string, sleigh string) {
 		worker1 := "ilan "
 		worker2 := "cesar"
 		worker3 := "ozzy "
-		worker4 := "flo  "
-		worker5 := "erin i"
+		worker4 := "samir"
+		worker5 := "dmitr"
 		for {
 			// make sure available is updated for next tick
 			count++
@@ -311,7 +328,7 @@ func fiveWorker(all []string, sleigh string) {
 			go worker(worker3, worker3C)
 			go worker(worker4, worker4C)
 			go worker(worker5, worker5C)
-			fmt.Println()
+			//fmt.Println()
 			ticker <- struct{}{}
 			ticker <- struct{}{}
 			ticker <- struct{}{}
@@ -323,7 +340,7 @@ func fiveWorker(all []string, sleigh string) {
 			<-worker3C // wait for worker1
 			<-worker4C // wait for worker2
 			<-worker5C // wait for worker2
-
+			fmt.Println()
 			if len(available.GetTodo()) == 0 {
 				assembled <- struct{}{}
 				break
