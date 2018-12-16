@@ -13,7 +13,7 @@ func main() {
 	line, _ := r.ReadString('\n')
 	sum := sumMetadata(line)
 	fmt.Println("sum", sum)
-		complexSum := sumComplex(line)
+	complexSum := sumComplex(line)
 	fmt.Println("complexSum", complexSum)
 }
 
