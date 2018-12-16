@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"log"
 	"os"
 	"strconv"
 	"strings"
@@ -14,11 +13,24 @@ func main() {
 	line, _ := r.ReadString('\n')
 	sum := sumMetadata(line)
 	fmt.Println("sum", sum)
+		complexSum := sumComplex(line)
+	fmt.Println("complexSum", complexSum)
 }
 
 type node struct {
 	children []node
 	metadata []int
+}
+
+func (n *node) isLeaf() bool {
+	if len(n.children) == 0 {
+		return true
+	}
+	return false
+}
+
+func (n *node) isValidIndex(i int) bool {
+	return i >= 0 && i <= len(n.children)
 }
 
 func (n *node) sum() int {
@@ -32,10 +44,32 @@ func (n *node) sum() int {
 	return sum
 }
 
+func (n *node) complexSum() int {
+	sum := 0
+	if n.isLeaf() {
+		for _, v := range n.metadata {
+			sum += v
+		}
+		return sum
+	}
+	for _, childIndex := range n.metadata {
+		if !n.isValidIndex(childIndex) {
+			continue
+		}
+		sum += n.children[childIndex-1].complexSum() // metadata is index 1 based
+	}
+	return sum
+}
+
+func sumComplex(lic string) int {
+	lic = strings.TrimSpace(lic)
+	root, _ := build(strings.Fields(lic), 0)
+	return root.complexSum()
+}
+
 func sumMetadata(lic string) int {
 	lic = strings.TrimSpace(lic)
 	root, _ := build(strings.Fields(lic), 0)
-	fmt.Println(lic, root)
 	return root.sum()
 }
 
@@ -46,7 +80,6 @@ func build(fields []string, pointer int) (node, int) {
 	}
 	childCount, metaDataCount := mustAtoi(fields[pointer]), mustAtoi(fields[pointer+1])
 	pointer = pointer + 2
-	log.Printf("node has %d children\n", childCount)
 	for i := 0; i < childCount; i++ {
 		child, shiftedPointer := build(fields, pointer)
 		pointer = shiftedPointer

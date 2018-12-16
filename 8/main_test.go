@@ -24,3 +24,22 @@ func TestMe(t *testing.T) {
 	}
 
 }
+
+func TestComplexMe(t *testing.T) {
+
+	tests := []struct {
+		lic  string
+		want int
+	}{
+
+		{"2 3 0 3 10 11 12 1 1 0 1 99 2 1 1 2", 66},
+	}
+
+	for _, test := range tests {
+		got := sumComplex(test.lic)
+		if test.want != got {
+			t.Errorf("want %d got %d\n", test.want, got)
+		}
+	}
+
+}
