@@ -30,10 +30,8 @@ type position struct {
 }
 
 func (pos position) tick() position {
-	//fmt.Print(pos, "->")
 	pos.p.x = pos.p.x + pos.v.x
 	pos.p.y = pos.p.y + pos.v.y
-	//fmt.Println(pos)
 	return pos
 }
 
@@ -67,7 +65,6 @@ cohesion:
 
 	img := image.NewRGBA(image.Rect(-500, -500, 500, 500))
 	for _, star := range s.stars {
-		//fmt.Println(star.p.x)
 		img.Set(star.p.x, star.p.y, color.White)
 		fmt.Println(star.p.x, star.p.y)
 	}
@@ -80,24 +77,10 @@ cohesion:
 	}
 
 	png.Encode(f, img)
-
-	//img.Close()
-	//f.Close()
-
-	//	err = gif.EncodeAll(f, &gif.GIF{
-	//		Image: images,
-	//		Delay: delays,
-	//	})
-
-	//	if err != nil {
-	//		panic(err.Error())
-	//	}
-
 }
 
 func (s *sky) init(ps []position) {
 	s.stars = ps
-	//s.sortStars()
 }
 
 func (s *sky) tick() {
