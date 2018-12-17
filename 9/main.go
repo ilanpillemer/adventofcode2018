@@ -1,76 +1,66 @@
 package main
 
 import (
+	"container/ring"
 	"fmt"
 )
 
-type circle struct {
-	circle  []int
-	current int
-}
+var r = ring.New(1)
 
-func (c *circle) playMarble(m int) (int, bool) {
+func playMarble(m int) (int, bool) {
 	score := 0
+	// we have a 23 divisible marble
 	if m%23 == 0 {
-
-		delpos := c.current - 7
-		if delpos < 0 {
-			delpos = len(c.circle) + delpos
-		}
-		c.current = (delpos)
-		score = score + m + c.circle[c.current]
-		c.circle = append(c.circle[:c.current], c.circle[c.current+1:]...)
+		//go back 7 positions...
+		r = r.Move(-7)
+		addToScore := r.Next().Value.(int)
+		score = score + m + addToScore
+		r.Unlink(1)
 		return score, true
 	}
-	c.current = (c.current + 2) % len(c.circle)
-	if c.current == m {
-		fmt.Println("wooooooo")
-		c.circle = append(c.circle, m)
-		return 0, false
-	}
-	c.circle = append(c.circle[:c.current], append([]int{m}, c.circle[c.current:]...)...)
+	r = r.Move(2)
+	s := ring.New(1)
+	s.Value = m
+	r.Link(s)
 	return 0, false
 }
 
 func play(players int, lastMarble int) int {
-	c := circle{
-		circle:  make([]int, 1),
-		current: 0,
-	}
+	r = ring.New(1)
+	r.Value = 0
 	marble := 0
-
-	fmt.Println(c.circle)
-
+	scores := make([]int, players)
 	for {
 		marble++
-		score, _ := c.playMarble(marble)
-		//		scoreString := ""
-		//		if ok {
-		//			scoreString = fmt.Sprintf("scored %d", score)
-		//			//fmt.Println(scoreString)
-		//		}
-
-		//		if len(c.circle) < 20 {
-		//			fmt.Println(c.circle, scoreString)
-		//		} else {
-		//			fmt.Println(c.circle[:20], scoreString)
-		//		}
-
-		if score == lastMarble {
-			fmt.Println("game is over with last marble worth", score)
+		score, _ := playMarble(marble)
+		player := marble % players
+		scores[player] += score
+		if marble == lastMarble {
+			return maxScore(scores)
 		}
-
-		//fmt.Println("playing marble", marble)
-
-		//		if marble == 25 {
-		//			os.Exit(0)
-		//		}
-
 	}
+}
 
-	return 0
+func printRing(player, score int) {
+	fmt.Print(player, " ")
+	r.Do(func(p interface{}) {
+		fmt.Print(p.(int), " ")
+	})
+	fmt.Println("score", score)
+}
+
+func maxScore(scores []int) (max int) {
+	for _, v := range scores {
+		if v > max {
+			max = v
+		}
+	}
+	return
 }
 
 func main() {
-
+	fmt.Println("max score game 1:", play(419, 72164))
+	fmt.Println("max score game 2:", play(419, 72164*100))
 }
+
+//419 players; last marble is worth 72164 points
