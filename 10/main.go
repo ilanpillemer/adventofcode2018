@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"image"
 	"image/color"
-	"image/png"
+	"image/color/palette"
+	"image/gif"
 	"io"
 	"os"
 	"regexp"
@@ -70,9 +71,9 @@ var maxy = 0
 var minx = 100000
 var miny = 100000
 
-func (s *sky) draw() {
+func (s *sky) draw(images []*image.Paletted) []*image.Paletted {
 	if !s.withinCohesionRange(500) {
-		return
+		return images
 	}
 	// for 100 cohesion
 	//maxx 270
@@ -86,9 +87,9 @@ func (s *sky) draw() {
 	//minx -30
 	//miny -111
 
-	img := image.NewRGBA(image.Rect(-30, -111, 470, 338))
+	img := image.NewPaletted(image.Rect(0, 0, 500, 500), palette.WebSafe)
 	for _, star := range s.stars {
-		img.Set(star.p.x, star.p.y, color.White)
+		img.Set(star.p.x+30, star.p.y+111, color.White)
 		if star.p.x > maxx {
 			maxx = star.p.x
 		}
@@ -103,14 +104,9 @@ func (s *sky) draw() {
 		}
 	}
 
-	f, err := os.Create(fmt.Sprintf("stars%d.png", s.ticks))
-	defer f.Close()
-
-	if err != nil {
-		panic(err.Error())
-	}
-
-	png.Encode(f, img)
+	images = append(images, img)
+	//fmt.Println(images)
+	return images
 }
 
 func (s *sky) init(ps []position) {
@@ -174,11 +170,34 @@ func main() {
 	fmt.Println("starting to draw")
 	s.init(ps)
 	//s.translate(50000, 50000)
-	//g := &GIF{}
-
+	g := &gif.GIF{
+		Image:     make([]*image.Paletted, 0),
+		Delay:     make([]int, 0),
+		LoopCount: 0,
+		Config: image.Config{
+			Height:     500,
+			Width:      500,
+			ColorModel: color.Palette(palette.WebSafe),
+		},
+	}
+	g.BackgroundIndex = uint8(1)
+	//images := make([]*image.Paletted, 0)
 	for i := 0; i < 50000; i++ {
-		s.draw()
+		g.Image = s.draw(g.Image)
 		s.tick()
+	}
+
+	g.Delay = make([]int, len(g.Image))
+	f, err := os.Create("stars.gif")
+
+	if err != nil {
+		panic(err.Error())
+	}
+	defer f.Close()
+	fmt.Println(g.Image)
+	err = gif.EncodeAll(f, g)
+	if err != nil {
+		panic(err.Error())
 	}
 	fmt.Println("maxx", maxx)
 	fmt.Println("maxy", maxy)
