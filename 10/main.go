@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"image"
 	"image/color"
-	"image/png"
+	"image/color/palette"
+	"image/gif"
 	"io"
 	"os"
 	"regexp"
@@ -46,37 +47,66 @@ type sky struct {
 	ticks int
 }
 
-func (s *sky) draw() {
-	for _, star := range s.stars {
+func abs(x int) int {
+	if x < 0 {
+		return -x
+	}
+	return x
+}
 
-		if star.p.x > -500 && star.p.x < 500 {
-			goto cohesion
+func (s *sky) withinCohesionRange(limit int) bool {
+
+	s.sortStars()
+	if abs(s.stars[0].p.y-s.stars[len(s.stars)-1].p.y) < limit {
+		s.sortStars2()
+		if abs(s.stars[0].p.x-s.stars[len(s.stars)-1].p.x) < limit {
+			return true
 		}
-
-		if star.p.y > -500 && star.p.y < 500 {
-			goto cohesion
-		}
-
-		fmt.Println("not near cohesion")
-		return
 	}
-cohesion:
-	fmt.Println("cohesion area")
+	return false
+}
 
-	img := image.NewRGBA(image.Rect(-500, -500, 500, 500))
+var maxx = 0
+var maxy = 0
+var minx = 100000
+var miny = 100000
+
+func (s *sky) draw(images []*image.Paletted) []*image.Paletted {
+	if !s.withinCohesionRange(500) {
+		return images
+	}
+	// for 100 cohesion
+	//maxx 270
+	//maxy 138
+	//minx 170
+	//miny 89
+
+	//for 500 cohesion
+	//maxx 470
+	//maxy 338
+	//minx -30
+	//miny -111
+
+	img := image.NewPaletted(image.Rect(0, 0, 500, 500), palette.WebSafe)
 	for _, star := range s.stars {
-		img.Set(star.p.x, star.p.y, color.White)
-		fmt.Println(star.p.x, star.p.y)
+		img.Set(star.p.x+30, star.p.y+111, color.White)
+		if star.p.x > maxx {
+			maxx = star.p.x
+		}
+		if star.p.y > maxy {
+			maxy = star.p.y
+		}
+		if star.p.x < minx {
+			minx = star.p.x
+		}
+		if star.p.y < miny {
+			miny = star.p.y
+		}
 	}
 
-	f, err := os.Create(fmt.Sprintf("stars%d.png", s.ticks))
-	defer f.Close()
-
-	if err != nil {
-		panic(err.Error())
-	}
-
-	png.Encode(f, img)
+	images = append(images, img)
+	//fmt.Println(images)
+	return images
 }
 
 func (s *sky) init(ps []position) {
@@ -106,6 +136,15 @@ func (s *sky) sortStars() {
 	})
 }
 
+func (s *sky) sortStars2() {
+	sort.Slice(s.stars, func(i, j int) bool {
+		if s.stars[i].p.x == s.stars[j].p.x {
+			return s.stars[i].p.y < s.stars[j].p.y
+		}
+		return s.stars[i].p.x < s.stars[j].p.x
+	})
+}
+
 func main() {
 	s := sky{}
 
@@ -131,10 +170,40 @@ func main() {
 	fmt.Println("starting to draw")
 	s.init(ps)
 	//s.translate(50000, 50000)
+	g := &gif.GIF{
+		Image:     make([]*image.Paletted, 0),
+		Delay:     make([]int, 0),
+		LoopCount: 0,
+		Config: image.Config{
+			Height:     500,
+			Width:      500,
+			ColorModel: color.Palette(palette.WebSafe),
+		},
+	}
+	g.BackgroundIndex = uint8(1)
+	//images := make([]*image.Paletted, 0)
 	for i := 0; i < 50000; i++ {
-		s.draw()
+		g.Image = s.draw(g.Image)
 		s.tick()
 	}
+
+	g.Delay = make([]int, len(g.Image))
+	f, err := os.Create("stars.gif")
+
+	if err != nil {
+		panic(err.Error())
+	}
+	defer f.Close()
+	fmt.Println(g.Image)
+	err = gif.EncodeAll(f, g)
+	if err != nil {
+		panic(err.Error())
+	}
+	fmt.Println("maxx", maxx)
+	fmt.Println("maxy", maxy)
+	fmt.Println("minx", minx)
+	fmt.Println("miny", miny)
+	fmt.Println("finished draw")
 }
 
 func mustAtoi(a string) (i int) {
