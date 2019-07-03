@@ -40,7 +40,6 @@ func main() {
 
 	// gen 100 is 4184 and then 38 gets added every generation
 	// if sum is greater than 100 then sum = 4184 + (n-100 * 38)
-
 	if *gens > 100 {
 		fmt.Println("using precalc info.. sum", 4184+(*gens-100)*38)
 	}
@@ -63,7 +62,6 @@ func spread(curr string) string {
 	curr = "..." + curr + "..."
 	center++
 	for i := 2; i < len(curr)-2; i++ {
-		//fmt.Printf("%s\n", curr[i-2:i+3])
 		if _, ok := rules[curr[i-2:i+3]]; !ok {
 			next = next + "."
 		} else {
