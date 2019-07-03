@@ -59,21 +59,14 @@ func main() {
 		raw = append(raw, line)
 	}
 
-	display(raw)
+	//	display(raw)
 	carts := extractCarts(raw)
 	grid := clear(raw)
-	display(grid)
-	dualDisplay(grid, carts)
-	carts = tick(grid, carts)
-	dualDisplay(grid, carts)
-	carts = tick(grid, carts)
-	dualDisplay(grid, carts)
-	carts = tick(grid, carts)
-	dualDisplay(grid, carts)
-	carts = tick(grid, carts)
-	dualDisplay(grid, carts)
-	carts = tick(grid, carts)
-	dualDisplay(grid, carts)
+	//display(grid)
+	for {
+		//dualDisplay(grid, carts)
+		carts = tick(grid, carts)
+	}
 
 	for k, v := range carts {
 		fmt.Println(k, v)
@@ -145,49 +138,174 @@ func tick(grid []string, carts map[pos]cart) map[pos]cart {
 			if c, ok := carts[pos{x: x, y: y}]; ok {
 				switch p {
 				case '-':
-					next[pos{x: x + 1, y: y}] = cart{c.Next, c.Direction}
+					switch c.Direction {
+					case Right:
+						if _, ok = next[pos{x: x + 1, y: y}]; ok {
+							fmt.Printf("Collision at %d, %d\n", x+1, y)
+							os.Exit(1)
+						}
+						next[pos{x: x + 1, y: y}] = cart{c.Next, c.Direction}
+					case Left:
+						if _, ok = next[pos{x: x - 1, y: y}]; ok {
+							fmt.Printf("Collision at %d, %d\n", x-1, y)
+							os.Exit(1)
+						}
+						next[pos{x: x - 1, y: y}] = cart{c.Next, c.Direction}
+					}
+
 				case '|':
-					next[pos{x: x, y: y + 1}] = cart{c.Next, c.Direction}
+					switch c.Direction {
+					case Up:
+						if _, ok = next[pos{x: x, y: y - 1}]; ok {
+							fmt.Printf("Collision at %d, %d\n", x, y-1)
+							os.Exit(1)
+						}
+						next[pos{x: x, y: y - 1}] = cart{c.Next, c.Direction}
+					case Down:
+						if _, ok = next[pos{x: x, y: y + 1}]; ok {
+							fmt.Printf("Collision at %d, %d\n", x, y+1)
+							os.Exit(1)
+						}
+						next[pos{x: x, y: y + 1}] = cart{c.Next, c.Direction}
+					}
+
 				case '\\':
 					switch c.Direction {
 					case Right:
+						if _, ok = next[pos{x: x, y: y + 1}]; ok {
+							fmt.Printf("Collision at %d, %d\n", x, y+1)
+							os.Exit(1)
+						}
 						next[pos{x: x, y: y + 1}] = cart{c.Next, Down}
 					case Left:
+						if _, ok = next[pos{x: x, y: y - 1}]; ok {
+							fmt.Printf("Collision at %d, %d\n", x, y-1)
+							os.Exit(1)
+						}
 						next[pos{x: x, y: y - 1}] = cart{c.Next, Up}
 					case Up:
+						if _, ok = next[pos{x: x - 1, y: y}]; ok {
+							fmt.Printf("Collision at %d, %d\n", x-1, y)
+							os.Exit(1)
+						}
 						next[pos{x: x - 1, y: y}] = cart{c.Next, Left}
 					case Down:
+						if _, ok = next[pos{x: x + 1, y: y}]; ok {
+							fmt.Printf("Collision at %d, %d\n", x+1, y)
+							os.Exit(1)
+						}
 						next[pos{x: x + 1, y: y}] = cart{c.Next, Right}
 					}
 				case '/':
 					switch c.Direction {
 					case Left:
+						if _, ok = next[pos{x: x, y: y + 1}]; ok {
+							fmt.Printf("Collision at %d, %d\n", x, y+1)
+							os.Exit(1)
+						}
 						next[pos{x: x, y: y + 1}] = cart{c.Next, Down}
 					case Right:
+						if _, ok = next[pos{x: x, y: y - 1}]; ok {
+							fmt.Printf("Collision at %d, %d\n", x, y-1)
+							os.Exit(1)
+						}
 						next[pos{x: x, y: y - 1}] = cart{c.Next, Up}
 					case Up:
+						if _, ok = next[pos{x: x + 1, y: y}]; ok {
+							fmt.Printf("Collision at %d, %d\n", x+1, y)
+							os.Exit(1)
+						}
 						next[pos{x: x + 1, y: y}] = cart{c.Next, Right}
 					case Down:
+						if _, ok = next[pos{x: x - 1, y: y}]; ok {
+							fmt.Printf("Collision at %d, %d\n", x-1, y)
+							os.Exit(1)
+						}
 						next[pos{x: x - 1, y: y}] = cart{c.Next, Left}
-
 					}
 				case '+':
 					switch c.Next {
 					case LeftTurn:
 						switch c.Direction {
 						case Up:
+							if _, ok = next[pos{x: x - 1, y: y}]; ok {
+								fmt.Printf("Collision at %d, %d\n", x-1, y)
+								os.Exit(1)
+							}
 							next[pos{x: x - 1, y: y}] = cart{Straight, Left}
 						case Down:
+							if _, ok = next[pos{x: x + 1, y: y}]; ok {
+								fmt.Printf("Collision at %d, %d\n", x+1, y)
+								os.Exit(1)
+							}
 							next[pos{x: x + 1, y: y}] = cart{Straight, Right}
 						case Left:
+							if _, ok = next[pos{x: x, y: y + 1}]; ok {
+								fmt.Printf("Collision at %d, %d\n", x, y+1)
+								os.Exit(1)
+							}
 							next[pos{x: x, y: y + 1}] = cart{Straight, Down}
 						case Right:
+							if _, ok = next[pos{x: x, y: y - 1}]; ok {
+								fmt.Printf("Collision at %d, %d\n", x, y-1)
+								os.Exit(1)
+							}
 							next[pos{x: x, y: y - 1}] = cart{Straight, Up}
 						}
 					case RightTurn:
-						next[pos{x: x, y: y - 1}] = cart{LeftTurn, Up}
+						switch c.Direction {
+						case Up:
+							if _, ok = next[pos{x: x + 1, y: y}]; ok {
+								fmt.Printf("Collision at %d, %d\n", x+1, y)
+								os.Exit(1)
+							}
+							next[pos{x: x + 1, y: y}] = cart{LeftTurn, Right}
+						case Down:
+							if _, ok = next[pos{x: x - 1, y: y}]; ok {
+								fmt.Printf("Collision at %d, %d\n", x-1, y)
+								os.Exit(1)
+							}
+							next[pos{x: x - 1, y: y}] = cart{LeftTurn, Left}
+						case Left:
+							if _, ok = next[pos{x: x, y: y - 1}]; ok {
+								fmt.Printf("Collision at %d, %d\n", x, y-1)
+								os.Exit(1)
+							}
+							next[pos{x: x, y: y - 1}] = cart{LeftTurn, Up}
+						case Right:
+							if _, ok = next[pos{x: x, y: y + 1}]; ok {
+								fmt.Printf("Collision at %d, %d\n", x, y+1)
+								os.Exit(1)
+							}
+							next[pos{x: x, y: y + 1}] = cart{LeftTurn, Down}
+						}
 					case Straight:
-						next[pos{x: x + 1, y: y}] = cart{RightTurn, Right}
+						switch c.Direction {
+						case Up:
+							if _, ok = next[pos{x: x, y: y - 1}]; ok {
+								fmt.Printf("Collision at %d, %d", x, y-1)
+								os.Exit(1)
+							}
+							next[pos{x: x, y: y - 1}] = cart{RightTurn, Up}
+						case Down:
+							if _, ok = next[pos{x: x, y: y + 1}]; ok {
+								fmt.Printf("Collision at %d, %d", x, y+1)
+								os.Exit(1)
+							}
+							next[pos{x: x, y: y + 1}] = cart{RightTurn, Down}
+						case Left:
+							if _, ok = next[pos{x: x - 1, y: y}]; ok {
+								fmt.Printf("Collision at %d, %d", x-1, y)
+								os.Exit(1)
+							}
+							next[pos{x: x - 1, y: y}] = cart{RightTurn, Left}
+						case Right:
+							if _, ok = next[pos{x: x + 1, y: y}]; ok {
+								fmt.Printf("Collision at %d, %d", x+1, y)
+								os.Exit(1)
+							}
+							next[pos{x: x + 1, y: y}] = cart{RightTurn, Right}
+						}
 					}
 
 				}
