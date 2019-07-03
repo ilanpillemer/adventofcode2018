@@ -50,7 +50,6 @@ func sum(curr string) int {
 	sum := 0
 	for i, s := range curr {
 		if s == '#' {
-			//fmt.Println(i, i-center)
 			sum += (i - center)
 		}
 	}
@@ -60,35 +59,16 @@ func sum(curr string) int {
 var center = 0
 
 func spread(curr string) string {
-	// initialise
 	next := ""
-	// iterate from beginning index 2 (position 3) to index len-3 (position 3 from the end) to  to end of string
-	// chops off two on left each time
 	curr = "..." + curr + "..."
-	center += 1
+	center++
 	for i := 2; i < len(curr)-2; i++ {
 		//fmt.Printf("%s\n", curr[i-2:i+3])
 		if _, ok := rules[curr[i-2:i+3]]; !ok {
 			next = next + "."
-			//	fmt.Println("added .")
 		} else {
 			next = next + rules[curr[i-2:i+3]]
-			//	fmt.Println("added", rules[curr[i-2:i+3]])
 		}
-		//next = next + curr[i-2:i+3]
 	}
-
-	//fmt.Println()
-	//fmt.Println(next)
-
-	// apply rules until one rules applies
-	// append a string to next if rule applies
-	// if no rule applies throw an error
-	// if strings.HasPrefix(next, "...") {
-	// 	next = strings.TrimSuffix(next, "...")
-	// 	center -= 3
-	// }
-	//	next = strings.TrimSuffix(next, "...")
 	return strings.TrimSuffix(next, "...")
-	//	return strings.TrimSuffix((strings.TrimPrefix(next, "...")), "...")
 }
