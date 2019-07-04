@@ -62,10 +62,10 @@ func main() {
 	//	display(raw)
 	carts := extractCarts(raw)
 	grid := clear(raw)
-	//display(grid)
+	display(grid)
 	for {
 		//dualDisplay(grid, carts)
-		carts = tick(grid, carts)
+		carts = tickElim(grid, carts)
 	}
 
 	for k, v := range carts {
@@ -311,6 +311,405 @@ func tick(grid []string, carts map[pos]cart) map[pos]cart {
 				}
 			}
 		}
+	}
+	return next
+}
+
+// Carts all move at the same speed; they take turns moving a single
+// step at a time. They do this based on their current location: carts
+// on the top row move first (acting from left to right), then carts
+// on the second row move (again from left to right), then carts on
+// the third row, and so on. Once each cart has moved one step, the
+// process repeats; each of these loops is called a tick.
+
+// BOOM!! I had this issue too.
+// https://www.reddit.com/r/adventofcode/comments/a5xwp8/day_13_part_2_help_c/
+// Carts can crash in the process of simulating a tick. In other
+// words, if two carts start a tick facing each other but directly
+// adjacent, then they crash after the first cart moves. My code had
+// been simulating an entire tick, and only then searching for carts
+// that occupied the same position, so it allowed carts to "phase"
+// through each other if adjacent and facing each other.
+func tickElim(grid []string, carts map[pos]cart) map[pos]cart {
+	next := make(map[pos]cart)
+	for y, line := range grid {
+		for x, p := range line {
+			if c, ok := carts[pos{x: x, y: y}]; ok {
+				switch p {
+				case '-':
+					switch c.Direction {
+					case Right:
+						//end of "tick" collision
+						if _, ok = next[pos{x: x + 1, y: y}]; ok {
+							fmt.Printf("Collision at %d, %d\n", x+1, y)
+							delete(next, pos{x: x + 1, y: y})
+							continue
+						}
+						//mid "tick" collision
+						if _, ok = carts[pos{x: x + 1, y: y}]; ok {
+							fmt.Printf("Collision at %d, %d\n", x+1, y)
+							delete(carts, pos{x: x + 1, y: y})
+							continue
+						}
+						next[pos{x: x + 1, y: y}] = cart{c.Next, c.Direction}
+						delete(carts, pos{x: x, y: y}) // moved on
+					case Left:
+						if _, ok = next[pos{x: x - 1, y: y}]; ok {
+							fmt.Printf("Collision at %d, %d\n", x-1, y)
+							delete(next, pos{x: x - 1, y: y})
+							continue
+						}
+						if _, ok = carts[pos{x: x - 1, y: y}]; ok {
+							fmt.Printf("Collision at %d, %d\n", x-1, y)
+							delete(carts, pos{x: x - 1, y: y})
+							continue
+						}
+						next[pos{x: x - 1, y: y}] = cart{c.Next, c.Direction}
+						delete(carts, pos{x: x, y: y}) // moved on
+					}
+
+				case '|':
+					switch c.Direction {
+					case Up:
+						if _, ok = next[pos{x: x, y: y - 1}]; ok {
+							fmt.Printf("Collision at %d, %d\n", x, y-1)
+							delete(next, pos{x: x, y: y - 1})
+							continue
+						}
+						if _, ok = carts[pos{x: x, y: y - 1}]; ok {
+							fmt.Printf("Collision at %d, %d\n", x, y-1)
+							delete(carts, pos{x: x, y: y - 1})
+							continue
+						}
+
+						next[pos{x: x, y: y - 1}] = cart{c.Next, c.Direction}
+						delete(carts, pos{x: x, y: y}) // moved on
+					case Down:
+						if _, ok = next[pos{x: x, y: y + 1}]; ok {
+							fmt.Printf("Collision at %d, %d\n", x, y+1)
+							delete(next, pos{x: x, y: y + 1})
+							continue
+						}
+						if _, ok = carts[pos{x: x, y: y + 1}]; ok {
+							fmt.Printf("Collision at %d, %d\n", x, y+1)
+							delete(carts, pos{x: x, y: y + 1})
+							continue
+						}
+
+						next[pos{x: x, y: y + 1}] = cart{c.Next, c.Direction}
+						delete(carts, pos{x: x, y: y}) // moved on
+					}
+
+				case '\\':
+					switch c.Direction {
+					case Right:
+						if _, ok = next[pos{x: x, y: y + 1}]; ok {
+							fmt.Printf("Collision at %d, %d\n", x, y+1)
+							delete(next, pos{x: x, y: y + 1})
+							continue
+						}
+						if _, ok = carts[pos{x: x, y: y + 1}]; ok {
+							fmt.Printf("Collision at %d, %d\n", x, y+1)
+							delete(carts, pos{x: x, y: y + 1})
+							continue
+						}
+
+						next[pos{x: x, y: y + 1}] = cart{c.Next, Down}
+						delete(carts, pos{x: x, y: y}) // moved on
+					case Left:
+						if _, ok = next[pos{x: x, y: y - 1}]; ok {
+							fmt.Printf("Collision at %d, %d\n", x, y-1)
+							delete(next, pos{x: x, y: y - 1})
+							continue
+						}
+						if _, ok = carts[pos{x: x, y: y - 1}]; ok {
+							fmt.Printf("Collision at %d, %d\n", x, y-1)
+							delete(carts, pos{x: x, y: y - 1})
+							continue
+						}
+
+						next[pos{x: x, y: y - 1}] = cart{c.Next, Up}
+						delete(carts, pos{x: x, y: y}) // moved on
+					case Up:
+						if _, ok = next[pos{x: x - 1, y: y}]; ok {
+							fmt.Printf("Collision at %d, %d\n", x-1, y)
+							delete(next, pos{x: x - 1, y: y})
+							continue
+						}
+						if _, ok = carts[pos{x: x - 1, y: y}]; ok {
+							fmt.Printf("Collision at %d, %d\n", x-1, y)
+							delete(carts, pos{x: x - 1, y: y})
+							continue
+						}
+
+						next[pos{x: x - 1, y: y}] = cart{c.Next, Left}
+						delete(carts, pos{x: x, y: y}) // moved on
+					case Down:
+						if _, ok = next[pos{x: x + 1, y: y}]; ok {
+							fmt.Printf("Collision at %d, %d\n", x+1, y)
+							delete(next, pos{x: x + 1, y: y})
+							continue
+						}
+						if _, ok = carts[pos{x: x + 1, y: y}]; ok {
+							fmt.Printf("Collision at %d, %d\n", x+1, y)
+							delete(carts, pos{x: x + 1, y: y})
+							continue
+						}
+
+						next[pos{x: x + 1, y: y}] = cart{c.Next, Right}
+						delete(carts, pos{x: x, y: y}) // moved on
+					}
+				case '/':
+					switch c.Direction {
+					case Left:
+						if _, ok = next[pos{x: x, y: y + 1}]; ok {
+							fmt.Printf("Collision at %d, %d\n", x, y+1)
+							delete(next, pos{x: x, y: y + 1})
+							continue
+						}
+						if _, ok = carts[pos{x: x, y: y + 1}]; ok {
+							fmt.Printf("Collision at %d, %d\n", x, y+1)
+							delete(carts, pos{x: x, y: y + 1})
+							continue
+						}
+
+						next[pos{x: x, y: y + 1}] = cart{c.Next, Down}
+						delete(carts, pos{x: x, y: y}) // moved on
+					case Right:
+						if _, ok = next[pos{x: x, y: y - 1}]; ok {
+							fmt.Printf("Collision at %d, %d\n", x, y-1)
+							delete(next, pos{x: x, y: y - 1})
+							continue
+						}
+						if _, ok = carts[pos{x: x, y: y - 1}]; ok {
+							fmt.Printf("Collision at %d, %d\n", x, y-1)
+							delete(carts, pos{x: x, y: y - 1})
+							continue
+						}
+
+						next[pos{x: x, y: y - 1}] = cart{c.Next, Up}
+						delete(carts, pos{x: x, y: y}) // moved on
+					case Up:
+						if _, ok = next[pos{x: x + 1, y: y}]; ok {
+							fmt.Printf("Collision at %d, %d\n", x+1, y)
+							delete(next, pos{x: x + 1, y: y})
+							continue
+						}
+						if _, ok = carts[pos{x: x + 1, y: y}]; ok {
+							fmt.Printf("Collision at %d, %d\n", x+1, y)
+							delete(carts, pos{x: x + 1, y: y})
+							continue
+						}
+
+						next[pos{x: x + 1, y: y}] = cart{c.Next, Right}
+					case Down:
+						if _, ok = next[pos{x: x - 1, y: y}]; ok {
+							fmt.Printf("Collision at %d, %d\n", x-1, y)
+							delete(next, pos{x: x - 1, y: y})
+							continue
+						}
+						if _, ok = carts[pos{x: x - 1, y: y}]; ok {
+							fmt.Printf("Collision at %d, %d\n", x-1, y)
+							delete(carts, pos{x: x - 1, y: y})
+							continue
+						}
+
+						next[pos{x: x - 1, y: y}] = cart{c.Next, Left}
+						delete(carts, pos{x: x, y: y}) // moved on
+					}
+				case '+':
+					switch c.Next {
+					case LeftTurn:
+						switch c.Direction {
+						case Up:
+							if _, ok = next[pos{x: x - 1, y: y}]; ok {
+								fmt.Printf("Collision at %d, %d\n", x-1, y)
+								delete(next, pos{x: x - 1, y: y})
+								continue
+							}
+							if _, ok = carts[pos{x: x - 1, y: y}]; ok {
+								fmt.Printf("Collision at %d, %d\n", x-1, y)
+								delete(carts, pos{x: x - 1, y: y})
+								continue
+							}
+
+							next[pos{x: x - 1, y: y}] = cart{Straight, Left}
+							delete(carts, pos{x: x, y: y}) // moved on
+						case Down:
+							if _, ok = next[pos{x: x + 1, y: y}]; ok {
+								fmt.Printf("Collision at %d, %d\n", x+1, y)
+								delete(next, pos{x: x + 1, y: y})
+								continue
+							}
+							if _, ok = carts[pos{x: x + 1, y: y}]; ok {
+								fmt.Printf("Collision at %d, %d\n", x+1, y)
+								delete(carts, pos{x: x + 1, y: y})
+								continue
+							}
+
+							next[pos{x: x + 1, y: y}] = cart{Straight, Right}
+							delete(carts, pos{x: x, y: y}) // moved on
+						case Left:
+							if _, ok = next[pos{x: x, y: y + 1}]; ok {
+								fmt.Printf("Collision at %d, %d\n", x, y+1)
+								delete(next, pos{x: x, y: y + 1})
+								continue
+							}
+							if _, ok = carts[pos{x: x, y: y + 1}]; ok {
+								fmt.Printf("Collision at %d, %d\n", x, y+1)
+								delete(carts, pos{x: x, y: y + 1})
+								continue
+							}
+
+							next[pos{x: x, y: y + 1}] = cart{Straight, Down}
+							delete(carts, pos{x: x, y: y}) // moved on
+						case Right:
+							if _, ok = next[pos{x: x, y: y - 1}]; ok {
+								fmt.Printf("Collision at %d, %d\n", x, y-1)
+								delete(next, pos{x: x, y: y - 1})
+								continue
+							}
+							if _, ok = carts[pos{x: x, y: y - 1}]; ok {
+								fmt.Printf("Collision at %d, %d\n", x, y-1)
+								delete(carts, pos{x: x, y: y - 1})
+								continue
+							}
+
+							next[pos{x: x, y: y - 1}] = cart{Straight, Up}
+							delete(carts, pos{x: x, y: y}) // moved on
+						}
+					case RightTurn:
+						switch c.Direction {
+						case Up:
+							if _, ok = next[pos{x: x + 1, y: y}]; ok {
+								fmt.Printf("Collision at %d, %d\n", x+1, y)
+								delete(next, pos{x: x + 1, y: y})
+								continue
+							}
+							if _, ok = carts[pos{x: x + 1, y: y}]; ok {
+								fmt.Printf("Collision at %d, %d\n", x+1, y)
+								delete(carts, pos{x: x + 1, y: y})
+								continue
+							}
+
+							next[pos{x: x + 1, y: y}] = cart{LeftTurn, Right}
+							delete(carts, pos{x: x, y: y}) // moved on
+						case Down:
+							if _, ok = next[pos{x: x - 1, y: y}]; ok {
+								fmt.Printf("Collision at %d, %d\n", x-1, y)
+								delete(next, pos{x: x - 1, y: y})
+								continue
+							}
+							if _, ok = carts[pos{x: x - 1, y: y}]; ok {
+								fmt.Printf("Collision at %d, %d\n", x-1, y)
+								delete(carts, pos{x: x - 1, y: y})
+								continue
+							}
+
+							next[pos{x: x - 1, y: y}] = cart{LeftTurn, Left}
+							delete(carts, pos{x: x, y: y}) // moved on
+						case Left:
+							if _, ok = next[pos{x: x, y: y - 1}]; ok {
+								fmt.Printf("Collision at %d, %d\n", x, y-1)
+								delete(next, pos{x: x, y: y - 1})
+								continue
+							}
+							if _, ok = carts[pos{x: x, y: y - 1}]; ok {
+								fmt.Printf("Collision at %d, %d\n", x, y-1)
+								delete(next, pos{x: x, y: y - 1})
+								continue
+							}
+
+							next[pos{x: x, y: y - 1}] = cart{LeftTurn, Up}
+							delete(carts, pos{x: x, y: y}) // moved on
+						case Right:
+							if _, ok = next[pos{x: x, y: y + 1}]; ok {
+								fmt.Printf("Collision at %d, %d\n", x, y+1)
+								delete(next, pos{x: x, y: y + 1})
+								continue
+							}
+							if _, ok = carts[pos{x: x, y: y + 1}]; ok {
+								fmt.Printf("Collision at %d, %d\n", x, y+1)
+								delete(carts, pos{x: x, y: y + 1})
+								continue
+							}
+
+							next[pos{x: x, y: y + 1}] = cart{LeftTurn, Down}
+							delete(carts, pos{x: x, y: y}) // moved on
+						}
+					case Straight:
+						switch c.Direction {
+						case Up:
+							if _, ok = next[pos{x: x, y: y - 1}]; ok {
+								fmt.Printf("Collision at %d, %d\n", x, y-1)
+								delete(next, pos{x: x, y: y - 1})
+								continue
+							}
+							if _, ok = carts[pos{x: x, y: y - 1}]; ok {
+								fmt.Printf("Collision at %d, %d\n", x, y-1)
+								delete(carts, pos{x: x, y: y - 1})
+								continue
+							}
+
+							next[pos{x: x, y: y - 1}] = cart{RightTurn, Up}
+							delete(carts, pos{x: x, y: y}) // moved on
+						case Down:
+							if _, ok = next[pos{x: x, y: y + 1}]; ok {
+								fmt.Printf("Collision at %d, %d\n", x, y+1)
+								delete(next, pos{x: x, y: y + 1})
+								continue
+							}
+							if _, ok = carts[pos{x: x, y: y + 1}]; ok {
+								fmt.Printf("Collision at %d, %d\n", x, y+1)
+								delete(carts, pos{x: x, y: y + 1})
+								continue
+							}
+
+							next[pos{x: x, y: y + 1}] = cart{RightTurn, Down}
+							delete(carts, pos{x: x, y: y}) // moved on
+						case Left:
+							if _, ok = next[pos{x: x - 1, y: y}]; ok {
+								fmt.Printf("Collision at %d, %d\n", x-1, y)
+								delete(next, pos{x: x - 1, y: y})
+								continue
+							}
+							if _, ok = carts[pos{x: x - 1, y: y}]; ok {
+								fmt.Printf("Collision at %d, %d\n", x-1, y)
+								delete(carts, pos{x: x - 1, y: y})
+								continue
+							}
+
+							next[pos{x: x - 1, y: y}] = cart{RightTurn, Left}
+							delete(carts, pos{x: x, y: y}) // moved on
+						case Right:
+							if _, ok = next[pos{x: x + 1, y: y}]; ok {
+								fmt.Printf("Collision at %d, %d\n", x+1, y)
+								delete(next, pos{x: x + 1, y: y})
+								continue
+							}
+							if _, ok = carts[pos{x: x + 1, y: y}]; ok {
+								fmt.Printf("Collision at %d, %d\n", x+1, y)
+								delete(carts, pos{x: x + 1, y: y})
+								continue
+							}
+
+							next[pos{x: x + 1, y: y}] = cart{RightTurn, Right}
+							delete(carts, pos{x: x, y: y}) // moved on
+						}
+					}
+
+				}
+			}
+		}
+	}
+	if len(next) <= 1 {
+		fmt.Println("Cars Left:", len(next))
+		for k, v := range next {
+			dualDisplay(grid, next)
+			fmt.Printf("remaining cart at x:%d y:%d --> [%#v] at %s\n", k.x, k.y, v, grid[k.y][k.x:k.x+1])
+		}
+
+		os.Exit(1)
 	}
 	return next
 }
