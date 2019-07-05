@@ -3,6 +3,7 @@ package main
 import "flag"
 import "fmt"
 import "strconv"
+import "strings"
 
 // You finally have a chance to look at all of the produce moving
 // around. Chocolate, cinnamon, mint, chili peppers, nutmeg,
@@ -43,10 +44,11 @@ import "strconv"
 // in general, they will move to different recipes.
 
 var gen = flag.Int("gen", 5, "default number of iterations of the recipes")
+var target = flag.String("target", "59414", "default target scoreboard")
 
 type elf struct {
 	current int
-	backing *[]int
+	backing *[]byte
 }
 
 func (e *elf) next() {
@@ -56,23 +58,25 @@ func (e *elf) next() {
 
 func (e *elf) score() int {
 	b := e.backing
-	return (*b)[e.current]
+	return int((*b)[e.current] - '0')
 }
 
 func main() {
 	flag.Parse()
-	recipes := []int{3, 7}
+	recipes := []byte{'0' + 3, '0' + 7}
 	e0 := elf{0, &recipes}
 	e1 := elf{1, &recipes}
 	fmt.Println("initialising")
-	fmt.Println(recipes)
-	for len(recipes) < *gen+10+2 {
+	fmt.Println(string(recipes))
+	// for len(recipes) < *gen+10+2 {
+	for i := 0; i < 50000000; i++ {
 		e0.next()
 		e1.next()
 		sum := strconv.Itoa(e0.score() + e1.score())
 		for _, v := range sum {
-			recipes = append(recipes, int(v-'0'))
+			recipes = append(recipes, byte(v))
 		}
 	}
-	fmt.Printf("%v\n", recipes[*gen:*gen+10])
+	fmt.Println("part1", string(recipes[*gen:*gen+10]))
+	fmt.Printf("part2: recipes: %s -> %d \n", *target, strings.Index(string(recipes), *target))
 }
