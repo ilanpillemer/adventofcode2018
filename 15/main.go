@@ -63,7 +63,22 @@ func display() {
 }
 
 func (u *unit) targets() []unit {
-	return nil
+	targets := make([]unit, 0)
+	for y := 0; y < height; y++ {
+		for x := 0; x < width; x++ {
+			switch u.race {
+			case elf:
+				if u, ok := goblins[pos{x, y}]; ok {
+					targets = append(targets, u)
+				}
+			case goblin:
+				if u, ok := elves[pos{x, y}]; ok {
+					targets = append(targets, u)
+				}
+			}
+		}
+	}
+	return targets
 }
 
 func (u *unit) canAttack([]unit) bool {
@@ -88,9 +103,19 @@ func main() {
 	fmt.Println("Initiative Determined...")
 	initiative := initiatives()
 	fmt.Println(initiative)
-	// for _, u := range initiative {
-
-	// }
+	// start round
+	for _, u := range initiative {
+		target := u.targets()
+		if len(target) < 1 {
+			fmt.Println("Game Over")
+			if u.race == elf {
+				fmt.Println("Elves Win")
+			} else {
+				fmt.Println("Goblins Win")
+			}
+			os.Exit(0)
+		}
+	}
 	fmt.Println("Combat Over!!!!")
 }
 
