@@ -28,11 +28,22 @@ var (
 
 type unit struct {
 	race unitType
+	p    pos
+}
+
+func (u unit) String() string {
+	switch u.race {
+	case elf:
+		return fmt.Sprintf("elf%v", u.p)
+	case goblin:
+		return fmt.Sprintf("goblin%v", u.p)
+	}
+	return "?"
 }
 
 func display() {
 	for y := 0; y < height; y++ {
-		for x := 0; x < width+1; x++ {
+		for x := 0; x < width; x++ {
 			if _, ok := walls[pos{x, y}]; ok {
 				fmt.Print("#")
 				continue
@@ -71,7 +82,40 @@ func (u *unit) move([]unit) {
 
 func main() {
 	fmt.Println("Scan....")
-	in := bufio.NewScanner(os.Stdin)
+	scan(bufio.NewScanner(os.Stdin))
+	display()
+	fmt.Println("Fight!!!!")
+	fmt.Println("Initiative Determined...")
+	initiative := initiatives()
+	fmt.Println(initiative)
+	// for _, u := range initiative {
+
+	// }
+	fmt.Println("Combat Over!!!!")
+}
+
+func initiatives() []unit {
+	initiative := make([]unit, 0)
+	for y := 0; y < height; y++ {
+		for x := 0; x < width; x++ {
+			if u, ok := elves[pos{x, y}]; ok {
+				initiative = append(initiative, u)
+				fmt.Println(x, y)
+			}
+			if u, ok := goblins[pos{x, y}]; ok {
+				initiative = append(initiative, u)
+				fmt.Println(x, y)
+			}
+		}
+	}
+	return initiative
+}
+
+func determine(targets []unit) []unit {
+	return nil
+}
+
+func scan(in *bufio.Scanner) {
 	for in.Scan() {
 		line := in.Text()
 		for i, c := range line {
@@ -84,43 +128,12 @@ func main() {
 			case '.':
 				caverns[pos{i, height}] = true
 			case 'E':
-				elves[pos{i, height}] = unit{elf}
+				elves[pos{i, height}] = unit{elf, pos{i, height}}
 			case 'G':
-				goblins[pos{i, height}] = unit{goblin}
+				goblins[pos{i, height}] = unit{goblin, pos{i, height}}
 			}
 		}
 		height++
 	}
-	display()
-	fmt.Println("Fight!!!!")
-	os.Exit(1)
-	// rounds
-rounds:
-	for {
-		for _, u := range startPositions() {
-			targets := u.targets()
-			if len(targets) == 0 {
-				break rounds
-			}
-
-			inRange := determine(targets)
-			if u.canAttack(inRange) {
-				u.attack(inRange)
-				continue
-			}
-			if u.canMoveTo(inRange) {
-				u.move(inRange)
-				continue
-			}
-		}
-	}
-	fmt.Println("Combat Over!!!!")
-}
-
-func startPositions() []unit {
-	return nil
-}
-
-func determine(targets []unit) []unit {
-	return nil
+	width++
 }
