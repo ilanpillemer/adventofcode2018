@@ -29,6 +29,7 @@ var (
 type unit struct {
 	race unitType
 	p    pos
+	hp   int
 }
 
 func (u unit) String() string {
@@ -39,6 +40,22 @@ func (u unit) String() string {
 		return fmt.Sprintf("goblin%v", u.p)
 	}
 	return "?"
+}
+
+func (u *unit) up() pos {
+	return pos{x: u.p.x, y: u.p.y - 1}
+}
+
+func (u *unit) down() pos {
+	return pos{x: u.p.x, y: u.p.y + 1}
+}
+
+func (u *unit) left() pos {
+	return pos{x: u.p.x - 1, y: u.p.y}
+}
+
+func (u *unit) right() pos {
+	return pos{x: u.p.x + 1, y: u.p.y}
 }
 
 func display() {
@@ -81,15 +98,81 @@ func (u *unit) targets() []unit {
 	return targets
 }
 
-func (u *unit) canAttack([]unit) bool {
-	return false
+func (u *unit) attackable(target []unit) (*unit, bool) {
+
+	all := make([]unit, 0)
+	minhp := 201
+	for _, v := range target {
+		switch {
+		case v.p == u.up():
+			all = append(all, v)
+			if v.hp < minhp {
+				minhp = v.hp
+			}
+		case v.p == u.down():
+			all = append(all, v)
+			if v.hp < minhp {
+				minhp = v.hp
+			}
+		case v.p == u.left():
+			all = append(all, v)
+			if v.hp < minhp {
+				minhp = v.hp
+			}
+		case v.p == u.right():
+			all = append(all, v)
+			if v.hp < minhp {
+				minhp = v.hp
+			}
+		}
+	}
+
+	//no opposition in range
+	if len(all) == 0 {
+		return nil, false
+	}
+
+	//only one opposition in range
+	if len(all) == 1 {
+		return &all[0], true
+	}
+
+	//filter to weakest opponents
+	weakest := make([]unit, 0, len(all))
+	for _, v := range all {
+		if v.hp == minhp {
+			weakest = append(weakest, v)
+		}
+	}
+	if len(weakest) == 1 {
+		return &weakest[0], true
+	}
+
+	//filter by reading order if more than one weakest
+	var closest unit
+	minx := width
+	miny := height
+	for _, v := range weakest {
+		if v.p.y < miny {
+			closest = v
+			miny = v.p.y
+		}
+		if v.p.y == miny {
+			if v.p.x < minx {
+				closest = v
+				minx = v.p.x
+			}
+		}
+	}
+
+	return &closest, true
 }
 
 func (u *unit) canMoveTo([]unit) bool {
 	return false
 }
 
-func (u *unit) attack([]unit) {
+func (u *unit) attack(unit) {
 }
 
 func (u *unit) move([]unit) {
@@ -105,6 +188,8 @@ func main() {
 	fmt.Println(initiative)
 	// start round
 	for _, u := range initiative {
+
+		//Battle Over?
 		target := u.targets()
 		if len(target) < 1 {
 			fmt.Println("Game Over")
@@ -115,6 +200,12 @@ func main() {
 			}
 			os.Exit(0)
 		}
+
+		if opp, ok := u.attackable(target); ok {
+			u.attack(*opp)
+			continue
+		}
+
 	}
 	fmt.Println("Combat Over!!!!")
 }
@@ -153,9 +244,9 @@ func scan(in *bufio.Scanner) {
 			case '.':
 				caverns[pos{i, height}] = true
 			case 'E':
-				elves[pos{i, height}] = unit{elf, pos{i, height}}
+				elves[pos{i, height}] = unit{elf, pos{i, height}, 200}
 			case 'G':
-				goblins[pos{i, height}] = unit{goblin, pos{i, height}}
+				goblins[pos{i, height}] = unit{goblin, pos{i, height}, 200}
 			}
 		}
 		height++
