@@ -168,8 +168,28 @@ func (u *unit) attackable(target []unit) (*unit, bool) {
 	return &closest, true
 }
 
-func (u *unit) canMoveTo([]unit) bool {
-	return false
+func (u *unit) canMoveTo(target []unit) (*unit, bool) {
+	all := make(map[pos]unit, 0)
+
+	//exist
+	for _, v := range target {
+		if _, ok := caverns[v.up()]; ok {
+			all[v.up()] = v
+		}
+		if _, ok := caverns[v.down()]; ok {
+			all[v.down()] = v
+		}
+		if _, ok := caverns[v.left()]; ok {
+			all[v.left()] = v
+		}
+		if _, ok := caverns[v.right()]; ok {
+			all[v.right()] = v
+		}
+	}
+
+	//reachable
+
+	return nil, false
 }
 
 func (u *unit) attack(unit) {
@@ -202,6 +222,7 @@ func main() {
 		}
 
 		if opp, ok := u.attackable(target); ok {
+			fmt.Printf("%v attacks %v\n", u, opp)
 			u.attack(*opp)
 			continue
 		}
