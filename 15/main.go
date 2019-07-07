@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"math"
 	"os"
 )
 
@@ -170,8 +171,10 @@ func (u *unit) attackable(target []unit) (*unit, bool) {
 
 func (u *unit) canMoveTo(target []unit) (*unit, bool) {
 	all := make(map[pos]unit, 0)
-
-	//exist
+	reachable := make(map[pos]int, 0)
+	closest := make(map[pos]int, 0)
+	dist := math.MaxInt64
+	//exist positions that can be moved to
 	for _, v := range target {
 		if _, ok := caverns[v.up()]; ok {
 			all[v.up()] = v
@@ -187,9 +190,36 @@ func (u *unit) canMoveTo(target []unit) (*unit, bool) {
 		}
 	}
 
-	//reachable
+	//filter to those positions that are reachable
+	for k := range all {
+		if moves, ok := distance(u.p, k); ok {
+			if moves < dist {
+				dist = moves
+			}
+			reachable[k] = dist
+		}
+	}
+	if len(reachable) == 0 {
+		return nil, false
+	}
+
+	//filter to closest of the reachable positions
+	for k, v := range reachable {
+		if v == dist {
+			closest[k] = v
+		}
+	}
+
+	if len(closest) == 1 {
+		return nil, true //TODO: fill in value
+	}
 
 	return nil, false
+}
+
+func distance(pos, pos) (int, bool) {
+
+	return -1, false
 }
 
 func (u *unit) attack(unit) {
