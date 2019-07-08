@@ -59,6 +59,22 @@ func (u *unit) right() pos {
 	return pos{x: u.p.x + 1, y: u.p.y}
 }
 
+func (p *pos) up() pos {
+	return pos{x: p.x, y: p.y - 1}
+}
+
+func (p *pos) down() pos {
+	return pos{x: p.x, y: p.y + 1}
+}
+
+func (p *pos) left() pos {
+	return pos{x: p.x - 1, y: p.y}
+}
+
+func (p *pos) right() pos {
+	return pos{x: p.x + 1, y: p.y}
+}
+
 func display() {
 	for y := 0; y < height; y++ {
 		for x := 0; x < width; x++ {
@@ -169,63 +185,109 @@ func (u *unit) attackable(target []unit) (*unit, bool) {
 	return &closest, true
 }
 
-func (u *unit) canMoveTo(target []unit) (*unit, bool) {
-	all := make(map[pos]unit, 0)
-	reachable := make(map[pos]int, 0)
-	closest := make(map[pos]int, 0)
-	dist := math.MaxInt64
-	//exist positions that can be moved to
-	for _, v := range target {
-		if _, ok := caverns[v.up()]; ok {
-			all[v.up()] = v
-		}
-		if _, ok := caverns[v.down()]; ok {
-			all[v.down()] = v
-		}
-		if _, ok := caverns[v.left()]; ok {
-			all[v.left()] = v
-		}
-		if _, ok := caverns[v.right()]; ok {
-			all[v.right()] = v
-		}
-	}
-
-	//filter to those positions that are reachable
-	for k := range all {
-		if moves, ok := distance(u.p, k); ok {
-			if moves < dist {
-				dist = moves
-			}
-			reachable[k] = dist
-		}
-	}
-	if len(reachable) == 0 {
-		return nil, false
-	}
-
-	//filter to closest of the reachable positions
-	for k, v := range reachable {
-		if v == dist {
-			closest[k] = v
-		}
-	}
-
-	if len(closest) == 1 {
-		return nil, true //TODO: fill in value
-	}
-
-	return nil, false
-}
-
-func distance(pos, pos) (int, bool) {
-
-	return -1, false
-}
-
 func (u *unit) attack(unit) {
 }
 
 func (u *unit) move([]unit) {
+}
+
+func distance(dest pos, src pos) (int, bool) {
+	//fmt.Println("distance", dest, src)
+	//breadth first search
+	queue := make([]pos, 0)
+	seen := make(map[pos]int)
+	queue = append(queue, src)
+	seen[src] = -1 // actual positions for src and dest not counted in example in AoC
+
+	for len(queue) != 0 {
+		// pop
+		//	fmt.Println(queue, seen)
+		q := queue[0]
+		queue = queue[1:]
+
+		if q == dest {
+			//	fmt.Println("found!!", seen[q])
+			return seen[q], true
+		}
+
+		// push
+		if _, ok := caverns[q.up()]; ok || dest == q.up() {
+			if _, ok := seen[q.up()]; !ok {
+				seen[q.up()] = seen[q] + 1
+				queue = append(queue, q.up())
+			}
+		}
+
+		if _, ok := caverns[q.down()]; ok || dest == q.down() {
+			if _, ok := seen[q.down()]; !ok {
+				seen[q.down()] = seen[q] + 1
+				queue = append(queue, q.down())
+			}
+		}
+
+		if _, ok := caverns[q.left()]; ok || dest == q.left() {
+			if _, ok := seen[q.left()]; !ok {
+				seen[q.left()] = seen[q] + 1
+				queue = append(queue, q.left())
+			}
+		}
+
+		if _, ok := caverns[q.right()]; ok || dest == q.right() {
+			if _, ok := seen[q.right()]; !ok {
+				seen[q.right()] = seen[q] + 1
+				queue = append(queue, q.right())
+			}
+		}
+	}
+	return -1, false
+}
+
+func inrange(target []unit) ([]pos, bool) {
+	in := make([]pos, 0, len(target))
+	for _, u := range target {
+		if _, ok := caverns[u.p.up()]; ok {
+			in = append(in, u.p.up())
+		}
+		if _, ok := caverns[u.p.down()]; ok {
+			in = append(in, u.p.down())
+		}
+		if _, ok := caverns[u.p.left()]; ok {
+			in = append(in, u.p.left())
+		}
+		if _, ok := caverns[u.p.right()]; ok {
+			in = append(in, u.p.right())
+		}
+	}
+
+	if len(in) == 0 {
+		return in, false
+	}
+	return in, true
+}
+
+func nearest(u unit, target []unit) map[pos]int {
+	nearest := make(map[pos]int, 0)
+	mindist := math.MaxInt64
+	if in, ok := inrange(target); ok {
+		fmt.Printf("[%v] inrange: %v\n", u, in)
+		for _, i := range in {
+			if dist, ok := distance(i, u.p); ok {
+				fmt.Println(i, "<->", u.p, dist)
+				nearest[i] = dist
+				if dist < mindist {
+					mindist = dist
+				}
+			}
+		}
+	}
+
+	for k, v := range nearest {
+		if v != mindist {
+			delete(nearest, k)
+		}
+	}
+
+	return nearest
 }
 
 func main() {
@@ -256,6 +318,18 @@ func main() {
 			u.attack(*opp)
 			continue
 		}
+
+		if in, ok := inrange(target); ok {
+			fmt.Printf("[%v] inrange: %v\n", u, in)
+			for _, i := range in {
+				if dist, ok := distance(i, u.p); ok {
+					fmt.Println(i, "<->", u.p, dist)
+				}
+			}
+		}
+
+		near := nearest(u, target)
+		fmt.Println("nearest", near)
 
 	}
 	fmt.Println("Combat Over!!!!")
