@@ -36,9 +36,9 @@ type unit struct {
 func (u unit) String() string {
 	switch u.race {
 	case elf:
-		return fmt.Sprintf("elf%v", u.p)
+		return fmt.Sprintf("elf%v [%d]", u.p, u.hp)
 	case goblin:
-		return fmt.Sprintf("goblin%v", u.p)
+		return fmt.Sprintf("goblin%v [%d]", u.p, u.hp)
 	}
 	return "?"
 }
@@ -94,6 +94,13 @@ func display() {
 		}
 		fmt.Println()
 	}
+
+	// for _, v := range elves {
+	// 	fmt.Println(v)
+	// }
+	// for _, v := range goblins {
+	// 	fmt.Println(v)
+	// }
 }
 
 func (u *unit) targets() []unit {
@@ -185,10 +192,29 @@ func (u *unit) attackable(target []unit) (*unit, bool) {
 	return &closest, true
 }
 
-func (u *unit) attack(unit) {
-}
+func (u *unit) attack(victim unit) {
+	victim.hp = victim.hp - 3
+	if victim.hp <= 0 {
+		switch victim.race {
+		case elf:
+			delete(elves, victim.p)
+			caverns[victim.p] = true
+		case goblin:
+			delete(goblins, victim.p)
+			caverns[victim.p] = true
+		}
+		//fmt.Printf("Arrggghhhh.. %v is dead\n", victim)
+		//display()
+		return
+	}
 
-func (u *unit) move([]unit) {
+	switch victim.race {
+	case elf:
+		elves[victim.p] = victim
+	case goblin:
+		goblins[victim.p] = victim
+	}
+
 }
 
 func distance(dest pos, src pos) (int, bool) {
@@ -378,33 +404,56 @@ func main() {
 
 	// initiative := initiatives()
 
-	count := 0
+	count := 1
 	// start round
 	display()
-
 	for {
-		count++
 		//fmt.Println("Initiative Determined...")
 		initiative := initiatives()
 		//fmt.Println("initiative:", initiative)
-		fmt.Println("Round", count)
+
+		//fmt.Println("Round", count)
 		for _, u := range initiative {
 			//Battle Over?
+			// there has been an attack.. check you still exist!
+			if _, ok := caverns[u.p]; ok {
+				//I no longer exist
+				continue
+			}
+
 			target := u.targets()
-			if len(target) < 1 || count == 5 {
+			if len(target) < 1 {
 				fmt.Println("Game Over")
+				display()
 				if u.race == elf {
 					fmt.Println("Elves Win")
 				} else {
 					fmt.Println("Goblins Win")
 				}
+				fmt.Println("Rounds fully Completed", count-1)
+				sum := 0
+				for _, v := range elves {
+					sum += v.hp
+					fmt.Println(v)
+				}
+				for _, v := range goblins {
+					sum += v.hp
+					fmt.Println(v)
+				}
+				fmt.Println("Total HP remaining", sum)
+				fmt.Println("Outcome ", sum*(count-1))
 				os.Exit(0)
 			}
 
 			if opp, ok := u.attackable(target); ok {
-				fmt.Printf("%v attacks %v\n", u, opp)
-				u.attack(*opp)
-				continue
+				//fmt.Printf("%v attacks %v\n", u, opp)
+				//check opp still exists
+				if _, ok := caverns[opp.p]; !ok {
+					//I no longer exist
+					u.attack(*opp)
+					continue
+				}
+
 			}
 
 			if near, ok := nearest(u, target); ok {
@@ -412,7 +461,7 @@ func main() {
 				tree, _ := path(near, u.p)
 				//fmt.Printf("tree: %v\n", tree)
 				move := readingOrderNextMove(near, u.p, tree)
-				fmt.Printf("%v moves to %v\n", u, move)
+				//fmt.Printf("%v moves to %v\n", u, move)
 				switch u.race {
 				case elf:
 					e := elves[u.p]
@@ -421,6 +470,14 @@ func main() {
 					delete(elves, u.p)
 					caverns[u.p] = true
 					delete(caverns, move)
+					//after moving.. it can still attack if possible
+					//target := e.targets()
+					if opp, ok := e.attackable(target); ok {
+						//		fmt.Printf("%v attacks %v\n", e, opp)
+						e.attack(*opp)
+						continue
+					}
+
 				case goblin:
 					g := goblins[u.p]
 					g.p = move
@@ -428,11 +485,21 @@ func main() {
 					delete(goblins, u.p)
 					caverns[u.p] = true
 					delete(caverns, move)
+					//after moving.. it can still attack if possible
+					//target := g.targets()
+					if opp, ok := g.attackable(target); ok {
+						//		fmt.Printf("%v attacks %v\n", g, opp)
+						g.attack(*opp)
+						continue
+					}
+
 				}
-				display()
+				//display()
 			}
 
 		}
+		count++
+
 	}
 	fmt.Println("Combat Over!!!!")
 }
