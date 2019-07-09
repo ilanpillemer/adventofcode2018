@@ -374,40 +374,65 @@ func nearest(u unit, target []unit) (pos, bool) {
 func main() {
 	fmt.Println("Scan....")
 	scan(bufio.NewScanner(os.Stdin))
-	display()
 	fmt.Println("Fight!!!!")
-	fmt.Println("Initiative Determined...")
-	initiative := initiatives()
-	fmt.Println(initiative)
+
+	// initiative := initiatives()
+
+	count := 0
 	// start round
-	for _, u := range initiative {
+	display()
 
-		//Battle Over?
-		target := u.targets()
-		if len(target) < 1 {
-			fmt.Println("Game Over")
-			if u.race == elf {
-				fmt.Println("Elves Win")
-			} else {
-				fmt.Println("Goblins Win")
+	for {
+		count++
+		//fmt.Println("Initiative Determined...")
+		initiative := initiatives()
+		//fmt.Println("initiative:", initiative)
+		fmt.Println("Round", count)
+		for _, u := range initiative {
+			//Battle Over?
+			target := u.targets()
+			if len(target) < 1 || count == 5 {
+				fmt.Println("Game Over")
+				if u.race == elf {
+					fmt.Println("Elves Win")
+				} else {
+					fmt.Println("Goblins Win")
+				}
+				os.Exit(0)
 			}
-			os.Exit(0)
-		}
 
-		if opp, ok := u.attackable(target); ok {
-			fmt.Printf("%v attacks %v\n", u, opp)
-			u.attack(*opp)
-			continue
-		}
+			if opp, ok := u.attackable(target); ok {
+				fmt.Printf("%v attacks %v\n", u, opp)
+				u.attack(*opp)
+				continue
+			}
 
-		if near, ok := nearest(u, target); ok {
-			fmt.Printf("%v: nearest -> %v \n", u, near)
-			tree, _ := path(near, u.p)
-			fmt.Printf("tree: %v\n", tree)
-			move := readingOrderNextMove(near, u.p, tree)
-			fmt.Printf("%v moves to %v\n", u, move)
-		}
+			if near, ok := nearest(u, target); ok {
+				//fmt.Printf("%v: nearest -> %v \n", u, near)
+				tree, _ := path(near, u.p)
+				//fmt.Printf("tree: %v\n", tree)
+				move := readingOrderNextMove(near, u.p, tree)
+				fmt.Printf("%v moves to %v\n", u, move)
+				switch u.race {
+				case elf:
+					e := elves[u.p]
+					e.p = move
+					elves[move] = e
+					delete(elves, u.p)
+					caverns[u.p] = true
+					delete(caverns, move)
+				case goblin:
+					g := goblins[u.p]
+					g.p = move
+					goblins[move] = g
+					delete(goblins, u.p)
+					caverns[u.p] = true
+					delete(caverns, move)
+				}
+				display()
+			}
 
+		}
 	}
 	fmt.Println("Combat Over!!!!")
 }
@@ -438,7 +463,7 @@ func readingOrderNextMove(dest pos, src pos, tree map[pos]node) pos {
 	}
 
 	//return the reading order element of the first of possible shortest paths (if more than one)
-	fmt.Printf("cleaned:: %v\n", tree)
+	//fmt.Printf("cleaned:: %v\n", tree)
 	path := tree[src]
 	for y := 0; y < height; y++ {
 		for x := 0; x < width; x++ {
@@ -459,14 +484,15 @@ func initiatives() []unit {
 		for x := 0; x < width; x++ {
 			if u, ok := elves[pos{x, y}]; ok {
 				initiative = append(initiative, u)
-				fmt.Println(x, y)
+				//				fmt.Println(x, y)
 			}
 			if u, ok := goblins[pos{x, y}]; ok {
 				initiative = append(initiative, u)
-				fmt.Println(x, y)
+				//				fmt.Println(x, y)
 			}
 		}
 	}
+	//	fmt.Println("inside initiative", initiative)
 	return initiative
 }
 
