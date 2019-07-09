@@ -242,6 +242,79 @@ func distance(dest pos, src pos) (int, bool) {
 	return -1, false
 }
 
+type node struct {
+	n        pos
+	children []node
+}
+
+func path(dest pos, src pos) (map[pos]node, bool) {
+	//fmt.Println("distance", dest, src)
+	//breadth first search
+	queue := make([]pos, 0)
+	seen := make(map[pos]int)
+	queue = append(queue, src)
+	seen[src] = -1 // actual positions for src and dest not counted in example in AoC
+	tree := make(map[pos]node)
+	tree[src] = node{src, []node{}}
+
+	for len(queue) != 0 {
+		// pop
+		//	fmt.Println(queue, seen)
+		q := queue[0]
+		queue = queue[1:]
+		if q == dest {
+			//	fmt.Println("found!!", seen[q])
+			return tree, true
+		}
+		tree[q] = node{q, []node{}}
+
+		// push
+		if _, ok := caverns[q.up()]; ok || dest == q.up() {
+			if _, ok := seen[q.up()]; !ok || dest == q.up() {
+				seen[q.up()] = seen[q] + 1
+				t := tree[q]
+				t.children = append(t.children, node{q.up(), []node{}})
+				tree[q] = t
+				queue = append(queue, q.up())
+			}
+		}
+
+		if _, ok := caverns[q.down()]; ok || dest == q.down() {
+			if _, ok := seen[q.down()]; !ok || dest == q.down() {
+				seen[q.down()] = seen[q] + 1
+				t := tree[q]
+				t.children = append(t.children, node{q.down(), []node{}})
+				tree[q] = t
+
+				queue = append(queue, q.down())
+			}
+		}
+
+		if _, ok := caverns[q.left()]; ok || dest == q.left() {
+			if _, ok := seen[q.left()]; !ok || dest == q.left() {
+				seen[q.left()] = seen[q] + 1
+				t := tree[q]
+				t.children = append(t.children, node{q.left(), []node{}})
+				tree[q] = t
+
+				queue = append(queue, q.left())
+			}
+		}
+
+		if _, ok := caverns[q.right()]; ok || dest == q.right() {
+			if _, ok := seen[q.right()]; !ok || dest == q.right() {
+				seen[q.right()] = seen[q] + 1
+				t := tree[q]
+				t.children = append(t.children, node{q.right(), []node{}})
+				tree[q] = t
+
+				queue = append(queue, q.right())
+			}
+		}
+	}
+	return tree, false
+}
+
 func inrange(target []unit) ([]pos, bool) {
 	in := make([]pos, 0, len(target))
 	for _, u := range target {
@@ -265,14 +338,14 @@ func inrange(target []unit) ([]pos, bool) {
 	return in, true
 }
 
-func nearest(u unit, target []unit) map[pos]int {
+func nearest(u unit, target []unit) (pos, bool) {
 	nearest := make(map[pos]int, 0)
 	mindist := math.MaxInt64
 	if in, ok := inrange(target); ok {
-		fmt.Printf("[%v] inrange: %v\n", u, in)
+		//fmt.Printf("[%v] inrange: %v\n", u, in)
 		for _, i := range in {
 			if dist, ok := distance(i, u.p); ok {
-				fmt.Println(i, "<->", u.p, dist)
+				//fmt.Println(i, "<->", u.p, dist)
 				nearest[i] = dist
 				if dist < mindist {
 					mindist = dist
@@ -287,7 +360,15 @@ func nearest(u unit, target []unit) map[pos]int {
 		}
 	}
 
-	return nearest
+	for y := 0; y < height; y++ {
+		for x := 0; x < width; x++ {
+			if _, ok := nearest[pos{x, y}]; ok {
+				return pos{x, y}, true
+			}
+		}
+	}
+
+	return pos{}, false
 }
 
 func main() {
@@ -319,20 +400,57 @@ func main() {
 			continue
 		}
 
-		if in, ok := inrange(target); ok {
-			fmt.Printf("[%v] inrange: %v\n", u, in)
-			for _, i := range in {
-				if dist, ok := distance(i, u.p); ok {
-					fmt.Println(i, "<->", u.p, dist)
-				}
-			}
+		if near, ok := nearest(u, target); ok {
+			fmt.Printf("%v: nearest -> %v \n", u, near)
+			tree, _ := path(near, u.p)
+			fmt.Printf("tree: %v\n", tree)
+			move := readingOrderNextMove(near, u.p, tree)
+			fmt.Printf("%v moves to %v\n", u, move)
 		}
-
-		near := nearest(u, target)
-		fmt.Println("nearest", near)
 
 	}
 	fmt.Println("Combat Over!!!!")
+}
+
+func readingOrderNextMove(dest pos, src pos, tree map[pos]node) pos {
+
+	//remove all paths that dont lead to destination
+	changes := true
+	for changes {
+		changes = false
+		for k, v := range tree {
+			if len(v.children) == 0 {
+				delete(tree, k)
+				changes = true
+				continue
+			}
+			children := v.children
+			for i := len(v.children) - 1; i > -1; i-- {
+				if _, ok := tree[children[i].n]; !ok && children[i].n != dest {
+					children = append(children[0:i], children[i+1:]...)
+					changes = true
+				}
+			}
+			t := tree[k]
+			t.children = children
+			tree[k] = t
+		}
+	}
+
+	//return the reading order element of the first of possible shortest paths (if more than one)
+	fmt.Printf("cleaned:: %v\n", tree)
+	path := tree[src]
+	for y := 0; y < height; y++ {
+		for x := 0; x < width; x++ {
+			for _, v := range path.children {
+				if (pos{x, y} == v.n) {
+					return v.n
+				}
+			}
+		}
+	}
+	panic("unreachable")
+
 }
 
 func initiatives() []unit {
