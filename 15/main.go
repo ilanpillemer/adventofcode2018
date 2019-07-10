@@ -294,56 +294,70 @@ func path(dest pos, src pos) (map[pos]node, bool) {
 		q := queue[0]
 		queue = queue[1:]
 		if q == dest {
+			if (src == pos{20, 4} && dest == pos{19, 8}) {
+				fmt.Println("bfs tree:", tree)
+			}
+
 			//	fmt.Println("found!!", seen[q])
 			return tree, true
 		}
 		tree[q] = node{q, []node{}}
 
-		// push
-		if _, ok := caverns[q.up()]; ok || dest == q.up() {
-			// is it already in the children list?
+		// push in priority reading order
+		for y := 0; y < height; y++ {
+			for x := 0; x < width; x++ {
+				switch {
+				case q.up() == pos{x, y}:
+					if _, ok := caverns[q.up()]; ok || dest == q.up() {
 
-			if _, ok := seen[q.up()]; !ok || dest == q.up() {
-				seen[q.up()] = seen[q] + 1
-				t := tree[q]
-				t.children = append(t.children, node{q.up(), []node{}})
-				tree[q] = t
-				queue = append(queue, q.up())
+						if _, ok := seen[q.up()]; !ok || dest == q.up() {
+							seen[q.up()] = seen[q] + 1
+							t := tree[q]
+							t.children = append(t.children, node{q.up(), []node{}})
+							tree[q] = t
+							queue = append(queue, q.up())
+						}
+					}
+				case q.down() == pos{x, y}:
+					if _, ok := caverns[q.down()]; ok || dest == q.down() {
+						if _, ok := seen[q.down()]; !ok || dest == q.down() {
+							seen[q.down()] = seen[q] + 1
+							t := tree[q]
+							t.children = append(t.children, node{q.down(), []node{}})
+							tree[q] = t
+
+							queue = append(queue, q.down())
+						}
+					}
+
+				case q.left() == pos{x, y}:
+					if _, ok := caverns[q.left()]; ok || dest == q.left() {
+						if _, ok := seen[q.left()]; !ok || dest == q.left() {
+							seen[q.left()] = seen[q] + 1
+							t := tree[q]
+							t.children = append(t.children, node{q.left(), []node{}})
+							tree[q] = t
+
+							queue = append(queue, q.left())
+						}
+					}
+
+				case q.right() == pos{x, y}:
+					if _, ok := caverns[q.right()]; ok || dest == q.right() {
+						if _, ok := seen[q.right()]; !ok || dest == q.right() {
+							seen[q.right()] = seen[q] + 1
+							t := tree[q]
+							t.children = append(t.children, node{q.right(), []node{}})
+							tree[q] = t
+
+							queue = append(queue, q.right())
+						}
+					}
+
+				}
 			}
 		}
 
-		if _, ok := caverns[q.down()]; ok || dest == q.down() {
-			if _, ok := seen[q.down()]; !ok || dest == q.down() {
-				seen[q.down()] = seen[q] + 1
-				t := tree[q]
-				t.children = append(t.children, node{q.down(), []node{}})
-				tree[q] = t
-
-				queue = append(queue, q.down())
-			}
-		}
-
-		if _, ok := caverns[q.left()]; ok || dest == q.left() {
-			if _, ok := seen[q.left()]; !ok || dest == q.left() {
-				seen[q.left()] = seen[q] + 1
-				t := tree[q]
-				t.children = append(t.children, node{q.left(), []node{}})
-				tree[q] = t
-
-				queue = append(queue, q.left())
-			}
-		}
-
-		if _, ok := caverns[q.right()]; ok || dest == q.right() {
-			if _, ok := seen[q.right()]; !ok || dest == q.right() {
-				seen[q.right()] = seen[q] + 1
-				t := tree[q]
-				t.children = append(t.children, node{q.right(), []node{}})
-				tree[q] = t
-
-				queue = append(queue, q.right())
-			}
-		}
 	}
 	return tree, false
 }
@@ -505,8 +519,8 @@ func main() {
 			}
 
 		}
-		display()
-		fmt.Println(count)
+		//display()
+		//fmt.Println(count)
 		count++
 
 	}
