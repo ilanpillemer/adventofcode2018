@@ -95,12 +95,17 @@ func display() {
 		fmt.Println()
 	}
 
-	// for _, v := range elves {
-	// 	fmt.Println(v)
-	// }
-	// for _, v := range goblins {
-	// 	fmt.Println(v)
-	// }
+	for y := 0; y < height; y++ {
+		for x := 0; x < height; x++ {
+			if e, ok := elves[pos{x, y}]; ok {
+				fmt.Printf("E %d %d,%d\n", e.hp, y, x)
+			}
+			if g, ok := goblins[pos{x, y}]; ok {
+				fmt.Printf("G %d %d,%d\n", g.hp, y, x)
+			}
+		}
+	}
+
 }
 
 func (u *unit) targets() []unit {
@@ -296,6 +301,8 @@ func path(dest pos, src pos) (map[pos]node, bool) {
 
 		// push
 		if _, ok := caverns[q.up()]; ok || dest == q.up() {
+			// is it already in the children list?
+
 			if _, ok := seen[q.up()]; !ok || dest == q.up() {
 				seen[q.up()] = seen[q] + 1
 				t := tree[q]
@@ -498,6 +505,8 @@ func main() {
 			}
 
 		}
+		display()
+		fmt.Println(count)
 		count++
 
 	}
