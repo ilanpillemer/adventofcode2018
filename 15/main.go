@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"math"
 	"os"
@@ -11,6 +12,8 @@ type unitType int
 type pos struct {
 	x, y int
 }
+
+var elfpower = flag.Int("elfpower", 3, "elfpower")
 
 const (
 	elf unitType = iota
@@ -198,7 +201,12 @@ func (u *unit) attackable(target []unit) (*unit, bool) {
 }
 
 func (u *unit) attack(victim unit) {
-	victim.hp = victim.hp - 3
+	switch u.race {
+	case goblin:
+		victim.hp = victim.hp - 3
+	case elf:
+		victim.hp = victim.hp - *elfpower
+	}
 	if victim.hp <= 0 {
 		switch victim.race {
 		case elf:
@@ -419,17 +427,21 @@ func nearest(u unit, target []unit) (pos, bool) {
 }
 
 func main() {
+	flag.Parse()
 	fmt.Println("Scan....")
 	scan(bufio.NewScanner(os.Stdin))
 	fmt.Println("Fight!!!!")
 
+	totelves := len(elves)
 	// initiative := initiatives()
 
-	count := 1
+	count := 0
 	// start round
 	display()
 	for {
+		count++
 		//fmt.Println("Initiative Determined...")
+		invalid := map[pos]bool{} // indicates that a unit in this position in the iniative is no longer valid
 		initiative := initiatives()
 		//fmt.Println("initiative:", initiative)
 
@@ -437,8 +449,18 @@ func main() {
 		for _, u := range initiative {
 			//Battle Over?
 			// there has been an attack.. check you still exist!
+			//BUG still here.. can steal an extra turn
+			//I no longer exist if there is a cavern here
+			//but what if someone now is here?
+
 			if _, ok := caverns[u.p]; ok {
 				//I no longer exist
+				continue
+			}
+
+			if invalid[u.p] {
+				//this turn is not mine
+				fmt.Println("bug fixed..")
 				continue
 			}
 
@@ -463,6 +485,10 @@ func main() {
 				}
 				fmt.Println("Total HP remaining", sum)
 				fmt.Println("Outcome ", sum*(count-1))
+				fmt.Printf("Elves alive %d out of %d\n", len(elves), totelves)
+				if totelves == len(elves) {
+					fmt.Println("Timeline restored.. all elves alive.")
+				}
 				os.Exit(0)
 			}
 
@@ -470,7 +496,8 @@ func main() {
 				//fmt.Printf("%v attacks %v\n", u, opp)
 				//check opp still exists
 				if _, ok := caverns[opp.p]; !ok {
-					//I no longer exist
+					//fmt.Println("potential bug if this unit has already actually attacked")
+					//fmt.Printf("%v attacks %v\n", u, opp)
 					u.attack(*opp)
 					continue
 				}
@@ -482,6 +509,7 @@ func main() {
 				tree, _ := path(near, u.p)
 				//fmt.Printf("tree: %v\n", tree)
 				move := readingOrderNextMove(near, u.p, tree)
+				invalid[move] = true
 				//fmt.Printf("%v moves to %v\n", u, move)
 				switch u.race {
 				case elf:
@@ -494,7 +522,7 @@ func main() {
 					//after moving.. it can still attack if possible
 					//target := e.targets()
 					if opp, ok := e.attackable(target); ok {
-						//		fmt.Printf("%v attacks %v\n", e, opp)
+						//	fmt.Printf("%v attacks after a move %v\n", e, opp)
 						e.attack(*opp)
 						continue
 					}
@@ -509,7 +537,7 @@ func main() {
 					//after moving.. it can still attack if possible
 					//target := g.targets()
 					if opp, ok := g.attackable(target); ok {
-						//		fmt.Printf("%v attacks %v\n", g, opp)
+						//	fmt.Printf("%v attacks after a move %v\n", g, opp)
 						g.attack(*opp)
 						continue
 					}
@@ -520,8 +548,7 @@ func main() {
 
 		}
 		//display()
-		//fmt.Println(count)
-		count++
+		//	fmt.Println(count)
 
 	}
 	fmt.Println("Combat Over!!!!")
