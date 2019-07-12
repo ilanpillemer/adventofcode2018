@@ -10,6 +10,8 @@ import (
 
 var regs [4]int
 var ops = make(map[string]func([4]int))
+var opcodesfilter [16]map[string]func([4]int)
+var opcode [16]func([4]int)
 
 const (
 	A int = iota + 1
@@ -49,12 +51,82 @@ func init() {
 	ops["eqir"] = equir
 	ops["eqri"] = eqri
 	ops["eqrr"] = eqrr
+
+	for i := 0; i < 16; i++ {
+		opcodesfilter[i] = make(map[string]func([4]int))
+		opcodesfilter[i]["addr"] = addr
+		opcodesfilter[i]["addi"] = addi
+		opcodesfilter[i]["mulr"] = mulr
+		opcodesfilter[i]["muli"] = muli
+		opcodesfilter[i]["banr"] = banr
+		opcodesfilter[i]["bain"] = bain
+		opcodesfilter[i]["borr"] = borr
+		opcodesfilter[i]["bori"] = bori
+		opcodesfilter[i]["setr"] = setr
+		opcodesfilter[i]["seti"] = seti
+		opcodesfilter[i]["gtir"] = gtir
+		opcodesfilter[i]["gtri"] = gtri
+		opcodesfilter[i]["gtrr"] = gtrr
+		opcodesfilter[i]["eqir"] = equir
+		opcodesfilter[i]["eqri"] = eqri
+		opcodesfilter[i]["eqrr"] = eqrr
+	}
+}
+
+func loadMachine() {
+	for i := 0; i < 16; i++ {
+		for _, v := range opcodesfilter[i] {
+			opcode[i] = v
+		}
+	}
+}
+
+func filtered() bool {
+	for _, v := range opcodesfilter {
+		if len(v) > 1 {
+			return false
+		}
+	}
+	return true
+}
+
+func reduce(i int, poss []string) {
+	//fmt.Println("testing code", i)
+	op := opcodesfilter[i]
+	for k := range op {
+		good := false
+		for _, w := range poss {
+			if w == k {
+				good = true
+			}
+		}
+		if !good {
+			delete(op, k)
+		}
+	}
+	opcodesfilter[i] = op
+	if len(op) == 1 {
+		//fmt.Printf("Found opcode[%d] --> %v\n", i, op)
+		for k := range op {
+			constrain(i, k)
+		}
+	}
+}
+
+func constrain(i int, code string) {
+	for j := 0; j < 16; j++ {
+		if i == j {
+			continue
+		}
+		delete(opcodesfilter[j], code)
+	}
 }
 
 func main() {
 	fmt.Println("Counting")
 	in := bufio.NewScanner(os.Stdin)
 	more3 := 0
+	running := false
 	for in.Scan() {
 		before := [4]int{}
 		after := [4]int{}
@@ -83,14 +155,37 @@ func main() {
 				after[i], _ = strconv.Atoi(strings.TrimSpace(v))
 			}
 			in.Scan()
-			c := count(before, after, inst)
+			c, poss := count(before, after, inst)
 			if c >= 3 {
 				more3++
 			}
-			fmt.Printf("counted %d for before %v inst %v after %v\n", c, before, inst, after)
+			reduce(inst[0], poss)
+			continue
 		}
+		if !running {
+			in.Scan() //one line
+			in.Scan() //two line .. program input starts now
+			running = true
+			setregs([4]int{0, 0, 0, 0})
+		}
+		if !filtered() {
+			panic("machine not loaded..")
+		}
+		loadMachine()
+		line = in.Text()
+		nums := strings.Fields(line)
+		for i, v := range nums {
+			inst[i], _ = strconv.Atoi(v)
+		}
+		opcode[inst[0]](inst)
+
+		//	fmt.Println(line)
 	}
 	fmt.Println("3 or more:", more3)
+	fmt.Println("state", opcodesfilter)
+	for i, v := range regs {
+		fmt.Printf("register [%d] -> [%d]\n", i, v)
+	}
 
 }
 
@@ -204,13 +299,14 @@ func is(f func([4]int), before [4]int, after [4]int, in [4]int) bool {
 	return isregs(after)
 }
 
-func count(before [4]int, after [4]int, in [4]int) int {
+func count(before [4]int, after [4]int, in [4]int) (int, []string) {
 	c := 0
-	for _, op := range ops {
+	poss := make([]string, 0)
+	for k, op := range ops {
 		if is(op, before, after, in) {
-			//	fmt.Println("could be", k)
+			poss = append(poss, k)
 			c++
 		}
 	}
-	return c
+	return c, poss
 }
