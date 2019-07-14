@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"os"
 )
@@ -10,10 +11,12 @@ type pos struct{ x, y int }
 
 var height int
 var width int
-
+var gens = flag.Int("gens", 10, "generations")
 var state map[pos]rune
+var cache = make(map[int]int)
 
 func main() {
+	flag.Parse()
 	state = map[pos]rune{}
 	in := bufio.NewScanner(os.Stdin)
 	y := 0
@@ -29,16 +32,74 @@ func main() {
 	}
 	height = y
 	// loaded initial state
-	display()
+	//display()
 	fmt.Println()
 	fmt.Println("mutating")
 
-	for i := 0; i < 10; i++ {
-		state = mutate(state)
+	//	var reps int
+	//	var ok bool
+
+	// for {
+	// 	state, reps, ok = cycle(state)
+	// 	//	display()
+	// 	//fmt.Println(score(state))
+	// 	fmt.Println(reps)
+	// 	if ok {
+	// 		break
+	// 	} //135647
+	// }
+
+	// cycle is 28
+	// cycle start at 580
+	// 580 should be 165376
+	// 609 should be 163494
+	// 741 should be 186686
+	skip := *gens
+
+	if *gens > 579 {
+		jump := (*gens - 580) % 28
+		fmt.Println("can skip in part 2")
+		skip = 580 + jump
 	}
+	fmt.Println("reduced skip to ", skip)
+
+	for i := 0; i < skip; i++ {
+		state = mutate(state)
+		fmt.Println(score(state))
+	}
+
 	fmt.Println()
 	display()
+	fmt.Println(score(state))
+}
 
+var counter = 0
+
+func cycle(state map[pos]rune) (map[pos]rune, int, bool) {
+	before := score(state)
+	state = mutate(state)
+	if _, ok := cache[before]; ok {
+		return state, counter, true
+	}
+	cache[before] = counter
+	counter++
+	return state, 0, false
+}
+
+func score(state map[pos]rune) int {
+	ly := 0
+	tree := 0
+	for y := 0; y < height; y++ {
+		for x := 0; x < width; x++ {
+			if state[pos{x, y}] == '#' {
+				ly++
+			}
+			if state[pos{x, y}] == '|' {
+				tree++
+			}
+		}
+	}
+	return tree * ly
 }
 
 func display() {
@@ -56,11 +117,11 @@ func display() {
 		}
 		fmt.Println()
 	}
-	fmt.Println("score", tree*ly)
 }
 
 func mutate(current map[pos]rune) map[pos]rune {
 
+	//check cache
 	var adjacent = func(e pos) [8]pos {
 		var adj [8]pos
 		adj[0] = pos{e.x, e.y - 1}
@@ -153,6 +214,6 @@ func mutate(current map[pos]rune) map[pos]rune {
 			continue
 		}
 	}
-
+	//	cache[score(current)] = score(state)
 	return state
 }
