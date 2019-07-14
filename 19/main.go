@@ -2,13 +2,15 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"os"
 	"strconv"
 	"strings"
 )
 
-var regs [6]int // 6 registers
+var part2 = flag.Bool("part2", false, "part2")
+var regs = [6]int{0, 0, 0, 0, 0, 0} // 6 registers
 var ops = make(map[string]func([3]int))
 var ip int //instruction pointer register
 
@@ -46,6 +48,11 @@ func init() {
 	ops["eqrr"] = eqrr
 }
 func main() {
+	flag.Parse()
+	if *part2 {
+		regs = [6]int{1, 0, 0, 0, 0, 0}
+	}
+
 	in := bufio.NewScanner(os.Stdin)
 	instLine := 0
 	for in.Scan() {
@@ -70,13 +77,25 @@ func main() {
 		instLine++
 	}
 	// display program
-	display()
+	//display()
 	fmt.Println("executing")
 	for execute() {
+		//display executing registers
+		fmt.Println(regs) //
+		//for part1 through inspection you can see its
+		//it sum of the factors of 1018
+		//for part2 through inspection you can see it trying to
+		//which is find sum of the factors of 10551418 which 16533000
 
 	}
+	// display()
+	// fmt.Println("executing again")
+	// fmt.Println(regs)
+	// for execute() {
 
-	display()
+	// }
+
+	//display()
 }
 
 func display() {
