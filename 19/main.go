@@ -71,6 +71,12 @@ func main() {
 	}
 	// display program
 	display()
+	fmt.Println("executing")
+	for execute() {
+
+	}
+
+	display()
 }
 
 func display() {
@@ -80,6 +86,19 @@ func display() {
 	fmt.Println("ip:", ip)
 	fmt.Println("regs", regs)
 
+}
+
+func execute() bool {
+	if regs[ip] >= len(prog) {
+		return false //halt
+	}
+	inst := prog[regs[ip]]
+	ops[inst.op]([3]int{inst.A, inst.B, inst.C})
+	//fmt.Println(regs[ip], inst)
+	//fmt.Println(regs)
+	regs[ip]++
+
+	return true
 }
 
 // addr (add register) stores into register C the result of adding register A and register B.
