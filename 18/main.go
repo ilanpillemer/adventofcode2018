@@ -32,23 +32,10 @@ func main() {
 	}
 	height = y
 	// loaded initial state
-	//display()
 	fmt.Println()
 	fmt.Println("mutating")
 
-	//	var reps int
-	//	var ok bool
-
-	// for {
-	// 	state, reps, ok = cycle(state)
-	// 	//	display()
-	// 	//fmt.Println(score(state))
-	// 	fmt.Println(reps)
-	// 	if ok {
-	// 		break
-	// 	} //135647
-	// }
-
+	//TODO work out how to do this without manual inspection
 	// cycle is 28
 	// cycle start at 580
 	// 580 should be 165376
@@ -65,7 +52,6 @@ func main() {
 
 	for i := 0; i < skip; i++ {
 		state = mutate(state)
-		fmt.Println(score(state))
 	}
 
 	fmt.Println()
