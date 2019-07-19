@@ -29,7 +29,6 @@ func initMaze() {
 
 func walk(path string, s pos) (pos, state, string) {
 	entry := s
-	//	fmt.Println(path)
 	if !exists(s) {
 		maze[s] = []pos{}
 	}
@@ -110,17 +109,17 @@ func grow(s pos, d pos) {
 var seen = map[pos]bool{}
 var dists []int
 
+//walk every path until you reach a dead or circle back onto yourself
 func explore(s pos, seen map[pos]bool, dist int) {
 	seen[s] = true
-	queue := maze[s]
-	var front pos
-	for len(queue) != 0 {
-		queue, front = pop(queue)
-		if _, ok := seen[front]; !ok {
-			seen[front] = true
-			explore(front, seen, dist+1)
+	directions := maze[s]
+	for _, front := range directions {
+		if _, ok := seen[front]; !ok { //make sure you have not been here
+			seen[front] = true           //ok I can go somewhere
+			explore(front, seen, dist+1) //lets go there noting it took longer
 		}
 	}
+	//you cant get any further so note down how long it took
 	dists = append(dists, dist)
 }
 
@@ -135,12 +134,6 @@ func main() {
 	fmt.Println("many", count())
 }
 
-func pop(queue []pos) ([]pos, pos) {
-	front := queue[0]
-	q := queue[1:]
-	return q, front
-}
-
 func longest() int {
 	max := 0
 	for _, i := range dists {
@@ -148,9 +141,7 @@ func longest() int {
 			max = i
 		}
 	}
-
 	return max
-
 }
 
 func count() int {
@@ -160,7 +151,5 @@ func count() int {
 			num++
 		}
 	}
-
 	return num
-
 }
