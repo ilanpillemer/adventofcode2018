@@ -4,14 +4,12 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"strings"
 )
 
 type state int
 
 const (
 	FIN state = iota
-	DEAD
 	DONE
 )
 
@@ -63,28 +61,22 @@ func walk(path string, s pos) (pos, state, string) {
 			path = cdr(path)
 			s = s.e()
 		case '(':
-			// if the inner ( ends with |) should continue also from heren
-			next, state, remain := walk(cdr(path), s)
-			if state == DEAD {
-				// if its a dead end type path
-				// then continue from current position
-				path = remain
-			} else {
-				// if its not a dead end path march on
-				s = next
-				path = remain
-			}
-
+			next, _, remain := walk(cdr(path), s)
+			s = next
+			path = remain
 		case ')':
 			return s, DONE, cdr(path)
 		case '|':
 			if car(cdr(path)) == ')' {
-				return s, DEAD, path
+				//in all cases where there is a |)
+				//every option brings the walker
+				//back to where they started anyway
+				//so even if I returned s instead of entry
+				//this would work!
+				return entry, DONE, cdr(cdr(path))
 			}
 			s = entry
-			//map out alternate route from entry
 			path = cdr(path)
-
 		}
 
 	}
@@ -126,19 +118,16 @@ func explore(s pos, seen map[pos]bool, dist int) {
 		queue, front = pop(queue)
 		if _, ok := seen[front]; !ok {
 			seen[front] = true
-			//fmt.Println(s, "->", front)
 			explore(front, seen, dist+1)
 		}
 	}
 	dists = append(dists, dist)
-	//fmt.Println(dist)
 }
 
 func main() {
 	in := bufio.NewScanner(os.Stdin)
 	in.Scan()
 	input := in.Text()
-	input = strings.Replace(input, "|)", ")", -1)
 	initMaze()
 	walk(input, pos{})
 	explore(pos{}, map[pos]bool{}, 0)
@@ -150,40 +139,6 @@ func pop(queue []pos) ([]pos, pos) {
 	front := queue[0]
 	q := queue[1:]
 	return q, front
-}
-
-func display(height int, width int) {
-	for y := -height; y < height; y++ {
-		fmt.Printf("%d\t", y)
-		for x := -width; x < width; x++ {
-			if exists(pos{x, y}) {
-				fmt.Print(".")
-			} else {
-				fmt.Print("#")
-			}
-
-		}
-		fmt.Println()
-	}
-	fmt.Println()
-
-}
-
-func display2(height int, width int) {
-	for y := -height; y < height; y++ {
-		fmt.Printf("%d\t", y)
-		for x := -width; x < width; x++ {
-			if exists(pos{x, y}) {
-				fmt.Print(".")
-			} else {
-				fmt.Print("#")
-			}
-
-		}
-		fmt.Println()
-	}
-	fmt.Println()
-
 }
 
 func longest() int {

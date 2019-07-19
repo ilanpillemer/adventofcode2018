@@ -1,7 +1,6 @@
 package main
 
 import (
-	"strings"
 	"testing"
 )
 
@@ -20,12 +19,8 @@ func Test(t *testing.T) {
 
 	for _, test := range tests {
 		initMaze()
-
-		test.input = strings.Replace(test.input, "|)", ")", -1)
 		walk(test.input, pos{})
-		//display(10, 10)
 		explore(pos{}, map[pos]bool{}, 0)
-		//fmt.Println("longest", longest())
 		got := longest()
 		if got != test.want {
 			t.Errorf("%s\n want %d got %d", test.input, test.want, got)
