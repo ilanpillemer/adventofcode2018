@@ -143,6 +143,7 @@ func main() {
 	walk(input, pos{})
 	explore(pos{}, map[pos]bool{}, 0)
 	fmt.Println("longest", longest())
+	fmt.Println("many", count())
 }
 
 func pop(queue []pos) ([]pos, pos) {
@@ -194,5 +195,17 @@ func longest() int {
 	}
 
 	return max
+
+}
+
+func count() int {
+	num := 0
+	for _, i := range dists {
+		if i >= 1000 {
+			num++
+		}
+	}
+
+	return num
 
 }
