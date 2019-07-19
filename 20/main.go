@@ -20,7 +20,7 @@ func (p pos) s() pos { return pos{p.x, p.y + 1} }
 func (p pos) w() pos { return pos{p.x - 1, p.y} }
 func (p pos) e() pos { return pos{p.x + 1, p.y} }
 
-//graph of maze. the key is a node and it as a list of nodes it has edges to
+//graph of maze. the key is a node and it has a list of nodes as its edges
 //these are stored bidirectional
 var maze = map[pos][]pos{}
 
