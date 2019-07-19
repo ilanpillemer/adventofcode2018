@@ -9,8 +9,8 @@ import (
 type state int
 
 const (
-	FIN state = iota
-	DONE
+	finished state = iota
+	explored
 )
 
 type pos struct{ x, y int }
@@ -20,6 +20,8 @@ func (p pos) s() pos { return pos{p.x, p.y + 1} }
 func (p pos) w() pos { return pos{p.x - 1, p.y} }
 func (p pos) e() pos { return pos{p.x + 1, p.y} }
 
+//graph of maze. the key is a node and it as a list of nodes it has edges to
+//these are stored bidirectional
 var maze = map[pos][]pos{}
 
 func initMaze() {
@@ -27,7 +29,7 @@ func initMaze() {
 	dists = make([]int, 0)
 }
 
-func walk(path string, s pos) (pos, state, string) {
+func walk(path string, s pos) (pos, string, state) {
 	entry := s
 	if !exists(s) {
 		maze[s] = []pos{}
@@ -38,7 +40,7 @@ func walk(path string, s pos) (pos, state, string) {
 			walk(cdr(path), s)
 			path = cdr(path)
 		case '$':
-			return s, FIN, path
+			return s, path, finished
 		case 'N':
 			grow(s, s.n())
 			grow(s.n(), s)
@@ -60,11 +62,11 @@ func walk(path string, s pos) (pos, state, string) {
 			path = cdr(path)
 			s = s.e()
 		case '(':
-			next, _, remain := walk(cdr(path), s)
+			next, remain, _ := walk(cdr(path), s)
 			s = next
 			path = remain
 		case ')':
-			return s, DONE, cdr(path)
+			return s, cdr(path), explored
 		case '|':
 			if car(cdr(path)) == ')' {
 				//in all cases where there is a |)
@@ -72,7 +74,8 @@ func walk(path string, s pos) (pos, state, string) {
 				//back to where they started anyway
 				//so even if I returned s instead of entry
 				//this would work!
-				return entry, DONE, cdr(cdr(path))
+				//I checked this on the puzzle input by inspection as well
+				return entry, cdr(cdr(path)), explored
 			}
 			s = entry
 			path = cdr(path)
@@ -94,6 +97,7 @@ func exists(p pos) bool {
 	return ok
 }
 
+//add bidirectional edges in the maze graph
 func grow(s pos, d pos) {
 	opts := maze[s]
 	for _, o := range opts {
