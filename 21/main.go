@@ -81,7 +81,7 @@ func main() {
 	fmt.Println("executing")
 	for execute() {
 		//display executing registers
-		fmt.Println(regs) //
+		//	fmt.Println(regs) //
 	}
 }
 
@@ -94,6 +94,8 @@ func display() {
 
 }
 
+var seen = map[int]bool{}
+
 func execute() bool {
 	if regs[ip] >= len(prog) {
 		return false //halt
@@ -102,10 +104,17 @@ func execute() bool {
 	ops[inst.op]([3]int{inst.A, inst.B, inst.C})
 
 	if regs[ip] == 28 {
-		fmt.Println(regs[ip], inst)
-		fmt.Println(regs)
-		fmt.Println("-------------")
-		os.Exit(0)
+		//	fmt.Println("-------------")
+		//	fmt.Println(regs[ip], inst)
+		if _, ok := seen[regs[C]]; ok {
+			fmt.Println("********")
+			os.Exit(0)
+		}
+		seen[regs[C]] = true
+
+		fmt.Println(regs[C])
+		//	fmt.Println("-------------")
+		//	os.Exit(0)
 	}
 
 	regs[ip]++
