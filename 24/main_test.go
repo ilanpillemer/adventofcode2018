@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"sort"
 	"testing"
 )
@@ -46,7 +45,7 @@ func TestSort(t *testing.T) {
 
 	a.groups = []group{g0, g1, g2}
 	sort.Sort(a)
-	if a.groups[0].power() != 8 {
+	if a.groups[0].power() != 1440 {
 		t.Errorf("want 8 got %d", a.groups[0].power())
 	}
 
@@ -54,7 +53,7 @@ func TestSort(t *testing.T) {
 		t.Errorf("want 18 got %d", a.groups[1].power())
 	}
 
-	if a.groups[2].power() != 1440 {
+	if a.groups[2].power() != 8 {
 		t.Errorf("want 1440 got %d", a.groups[2].power())
 	}
 
