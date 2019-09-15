@@ -14,12 +14,9 @@ const (
 	slashing
 )
 
-type unit struct {
-	hp int
-}
-
 type group struct {
-	units      []unit
+	units      int
+	hp         int
 	damage     int
 	initiative int
 	attack     attackType
@@ -49,11 +46,11 @@ type army struct {
 }
 
 func (g group) power() int {
-	if len(g.units) == 0 {
+	if g.units == 0 {
 		return 0
 	}
 
-	return len(g.units) * g.damage
+	return g.units * g.damage
 }
 
 func (g group) possible(t group) int {
@@ -93,9 +90,11 @@ func main() {
 func (a *army) target(t *army) {
 	sort.Sort(a)
 	fmt.Println(a)
-//	options := t.groups
+	//	options := t.groups
 	//	for i, v := range a.groups {
 	//
 	//	}
 
 }
+
+type sortByPossible army

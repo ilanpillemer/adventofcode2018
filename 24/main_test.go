@@ -7,11 +7,8 @@ import (
 
 func TestPower(t *testing.T) {
 	g := group{}
-	g.units = make([]unit, 18)
-	for i := 0; i < 18; i++ {
-		g.damage = 8
-		g.units[i] = unit{}
-	}
+	g.units = 18
+	g.damage = 8
 
 	want := 144
 	got := g.power()
@@ -23,25 +20,17 @@ func TestPower(t *testing.T) {
 func TestSort(t *testing.T) {
 	a := army{}
 	g0 := group{}
-	g0.units = make([]unit, 18)
-	for i := 0; i < 18; i++ {
-		g0.damage = 1
-		g0.units[i] = unit{}
-	}
+	g0.units = 18
+	g0.damage = 1
 
 	g1 := group{}
-	g1.units = make([]unit, 1)
-	for i := 0; i < 1; i++ {
-		g1.damage = 8
-		g1.units[i] = unit{}
-	}
+	g1.units = 1
+	g1.damage = 8
 
 	g2 := group{}
-	g2.units = make([]unit, 180)
-	for i := 0; i < 180; i++ {
-		g2.damage = 8
-		g2.units[i] = unit{}
-	}
+	g2.units = 180
+
+	g2.damage = 8
 
 	a.groups = []group{g0, g1, g2}
 	sort.Sort(a)
