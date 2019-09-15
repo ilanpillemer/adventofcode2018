@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"sort"
 )
 
 type attackType int
@@ -12,9 +11,14 @@ const (
 	bludgeoning
 	fire
 	slashing
+	cold
+	love
 )
 
+const maxInit = 4
+
 type group struct {
+	id         string
 	units      int
 	hp         int
 	damage     int
@@ -42,6 +46,7 @@ func (a army) Swap(i, j int) {
 }
 
 type army struct {
+	id     string
 	groups []group
 }
 
@@ -87,14 +92,97 @@ func main() {
 	fmt.Println(is, team)
 }
 
-func (a *army) target(t *army) {
-	sort.Sort(a)
-	fmt.Println(a)
-	//	options := t.groups
-	//	for i, v := range a.groups {
-	//
-	//	}
+func target(a *army, t *army) map[int]int {
+	targets := map[int]int{}
+	taken := map[int]bool{}
+	for i, v := range a.groups {
+		maxDamage := -1
+		var selected group
+		selectedIndex := -1
 
+		for i2, v2 := range t.groups {
+			if taken[i2] {
+				continue
+			}
+			damage := v.possible(v2)
+			if damage > maxDamage {
+				maxDamage = damage
+				selectedIndex = i2
+				selected = v2
+			}
+			if damage == maxDamage && v2.initiative < selected.initiative {
+				selectedIndex = i2
+				selected = v2
+			}
+		}
+		if maxDamage > 0 {
+			taken[selectedIndex] = true
+			targets[i] = selectedIndex
+		}
+		maxDamage = -1
+	}
+	fmt.Println(targets)
+	return targets
 }
 
-type sortByPossible army
+func attack(a *army, b *army, at map[int]int, bt map[int]int) (*army, *army) {
+	fmt.Println()
+	//top:
+	for i := maxInit; i > 0; i-- {
+		//fmt.Println("init", i)
+		for j, v := range a.groups {
+			//dead
+			if v.units == 0 {
+				continue
+			}
+			//no target
+			if _,ok := at[j]; !ok {
+			continue
+			}
+			if v.initiative == i {
+				damage := a.groups[j].possible(b.groups[at[j]])
+				hp := b.groups[at[j]].hp
+				units := b.groups[at[j]].units
+				//fmt.Println("damage mod hp", damage, hp)
+				tot := damage / hp
+				units = units - tot
+				b.groups[at[j]].units = units
+				fmt.Printf("%s %s attacks defending %s %s, killing %d units\n", a.id, a.groups[j].id, b.id, b.groups[at[j]].id, tot)
+			}
+		}
+		for j, v := range b.groups {
+			if v.units == 0 {
+				continue
+			}
+						//no target
+			if _,ok := bt[j]; !ok {
+			continue
+			}
+			if v.initiative == i {
+				damage := b.groups[j].possible(a.groups[bt[j]])
+				hp := a.groups[bt[j]].hp
+				units := a.groups[bt[j]].units
+				//fmt.Println("damage mod hp", damage, hp)
+				tot := damage / hp
+				if tot > units {
+					tot = units
+				}
+				units = units - tot
+				a.groups[bt[j]].units = units
+				fmt.Printf("%s %s attacks defending %s %s, killing %d units\n", b.id, b.groups[j].id, a.id, a.groups[bt[j]].id, tot)
+			}
+		}
+	}
+	for i := len(a.groups) - 1; i > -1; i-- {
+		if a.groups[i].units == 0 {
+			a.groups = append(a.groups[:i], a.groups[i+1:]...)
+		}
+	}
+	for i := len(b.groups) - 1; i > -1; i-- {
+		if b.groups[i].units == 0 {
+			b.groups = append(b.groups[:i], b.groups[i+1:]...)
+		}
+	}
+	return a, b
+
+}
