@@ -134,7 +134,7 @@ func TestTarget(t *testing.T) {
 		attack(&a, &b, atargets, btargets)
 	}
 
-score := 0
+	score := 0
 	fmt.Println()
 	fmt.Println(a.id)
 	for _, v := range a.groups {
@@ -149,7 +149,6 @@ score := 0
 		score += v.units
 	}
 
-	fmt.Println("final score",score)
-
+	fmt.Println("final score", score)
 
 }
