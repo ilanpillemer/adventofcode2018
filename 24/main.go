@@ -2,12 +2,15 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"os"
 	"sort"
 	"strconv"
 	"strings"
 )
+
+var boost = flag.Int("b", 0, "boost")
 
 type attackType int
 
@@ -89,6 +92,7 @@ func (g group) isWeak(a attackType) bool {
 }
 
 func main() {
+	flag.Parse()
 	a := army{id: "Immune System"}
 	b := army{id: "Infection"}
 	a.groups = []group{}
@@ -148,10 +152,14 @@ func main() {
 					g = addWeak(g, field)
 				case "attack":
 					g = addAttack(g, field)
+
+
 				case "initiative":
 					g = addInit(g, field)
 				}
 			}
+				g.damage = g.damage + *boost
+					fmt.Println(g.damage)
 			a.groups = append(a.groups, g)
 		case "infect":
 			gname := fmt.Sprintf("Group %d", g2)
@@ -200,7 +208,7 @@ func main() {
 	}
 
 	for len(a.groups) > 0 && len(b.groups) > 0 {
-			sort.Sort(a)
+		sort.Sort(a)
 		sort.Sort(b)
 		atargets := target(&a, &b)
 		btargets := target(&b, &a)
